@@ -46,15 +46,25 @@ body {
     position: relative;
   }
   
-  /* 添加横向滚动提示 */
-  .overflow-x-auto::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 40px;
-    height: 100%;
-    background: linear-gradient(to right, transparent, rgba(255,255,255,0.7));
-    pointer-events: none;
+  /* 调整图表轴和标签的布局 */
+  .recharts-cartesian-axis-line {
+    stroke-width: 1px !important;
+  }
+  
+  .recharts-legend-wrapper {
+    font-size: 10px !important;
+    padding-top: 0 !important;
+  }
+  
+  /* 优化触摸目标大小 */
+  .recharts-layer, .recharts-active-dot {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  
+  /* 图表容器内边距优化 */
+  .recharts-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }

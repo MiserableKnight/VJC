@@ -222,8 +222,8 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen p-2 sm:p-4 md:p-6 bg-gray-50">
-      <h1 className="text-xl sm:text-2xl font-bold text-center my-4 sm:my-8 text-gray-800">飞行运营数据可视化平台</h1>
+    <main className="min-h-screen p-0.5 sm:p-4 md:p-6 bg-gray-50">
+      <h1 className="text-xl sm:text-2xl font-bold text-center my-3 sm:my-8 text-gray-800">飞行运营数据可视化平台</h1>
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -251,7 +251,7 @@ export default function Home() {
           </button>
         </div>
       ) : (
-        <div className="space-y-8 sm:space-y-16 max-w-7xl mx-auto">
+        <div className="space-y-4 sm:space-y-16 max-w-7xl mx-auto">
           {dailyData.length === 0 && cumulativeData.length === 0 ? (
             <div className="flex justify-center items-center h-64 bg-yellow-50 p-3 sm:p-6 rounded-lg border border-yellow-200">
               <div className="text-center">
@@ -267,12 +267,12 @@ export default function Home() {
           ) : (
             <>
               {/* 空时数据（空中时间和空地时间） */}
-              <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-3 sm:mb-6">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">空时数据</h2>
+              <div className="bg-white p-1 sm:p-6 rounded-lg shadow-md">
+                <div className="flex justify-between items-center mb-1 sm:mb-6">
+                  <h2 className="text-base sm:text-xl font-semibold text-gray-800">空时数据</h2>
                   <button 
                     onClick={handleRetry}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium py-1 px-2 sm:px-3 rounded-full"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium py-0.5 px-2 sm:px-3 rounded-full"
                   >
                     刷新
                   </button>
@@ -283,14 +283,14 @@ export default function Home() {
                     <p className="text-gray-500">暂无数据</p>
                   </div>
                 ) : (
-                  <div className="h-[350px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
+                  <div className="h-[450px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={combinedData}
                         margin={{ 
                           top: 20, 
-                          right: 30, 
-                          left: 20, 
+                          right: windowWidth < 768 ? 15 : 30, 
+                          left: windowWidth < 768 ? 10 : 20, 
                           bottom: combinedData.length > 10 ? 90 : 60 
                         }}
                       >
@@ -300,9 +300,9 @@ export default function Home() {
                           tickFormatter={formatDate}
                           angle={-45} 
                           textAnchor="end"
-                          height={80}
-                          dy={20}
-                          padding={{ left: 20, right: 20 }}
+                          height={windowWidth < 768 ? 60 : 80}
+                          dy={windowWidth < 768 ? 10 : 20}
+                          padding={{ left: windowWidth < 768 ? 10 : 20, right: windowWidth < 768 ? 10 : 20 }}
                           scale="point"
                           type="category"
                           interval={Math.max(1, Math.floor(combinedData.length / (windowWidth < 768 ? 10 : 20)))}
@@ -310,14 +310,14 @@ export default function Home() {
                         />
                         <YAxis 
                           yAxisId="left"
-                          width={50}
+                          width={windowWidth < 768 ? 40 : 50}
                           tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['daily_air_time', 'daily_block_time'])]}
                         />
                         <YAxis 
                           yAxisId="right"
                           orientation="right"
-                          width={50}
+                          width={windowWidth < 768 ? 40 : 50}
                           tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['cumulative_air_time', 'cumulative_block_time'])]}
                         />
@@ -333,8 +333,8 @@ export default function Home() {
                         />
                         <Legend 
                           verticalAlign="bottom" 
-                          height={60} 
-                          wrapperStyle={{ paddingTop: '10px' }}
+                          height={windowWidth < 768 ? 45 : 60} 
+                          wrapperStyle={{ paddingTop: windowWidth < 768 ? '5px' : '10px' }}
                           iconSize={windowWidth < 768 ? 8 : 10}
                           iconType="circle"
                         />
@@ -360,7 +360,7 @@ export default function Home() {
                           stroke="#E15759" 
                           activeDot={{ r: windowWidth < 768 ? 4 : 8 }}
                           connectNulls={true}
-                          dot={false}
+                          dot={{ r: windowWidth < 768 ? 2 : 4 }}
                           strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                         <Line 
@@ -370,7 +370,7 @@ export default function Home() {
                           name="累计空地时间" 
                           stroke="#76B7B2"
                           connectNulls={true}
-                          dot={false}
+                          dot={{ r: windowWidth < 768 ? 2 : 4 }}
                           strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                       </ComposedChart>
@@ -380,9 +380,9 @@ export default function Home() {
               </div>
               
               {/* 日利用率数据 */}
-              <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-3 sm:mb-6">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">日利用率数据</h2>
+              <div className="bg-white p-1 sm:p-6 rounded-lg shadow-md">
+                <div className="flex justify-between items-center mb-1 sm:mb-6">
+                  <h2 className="text-base sm:text-xl font-semibold text-gray-800">日利用率数据</h2>
                 </div>
                 
                 {combinedData.length === 0 ? (
@@ -390,14 +390,14 @@ export default function Home() {
                     <p className="text-gray-500">暂无数据</p>
                   </div>
                 ) : (
-                  <div className="h-[350px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
+                  <div className="h-[450px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={combinedData}
                         margin={{ 
                           top: 20, 
-                          right: 30, 
-                          left: 20, 
+                          right: windowWidth < 768 ? 15 : 30, 
+                          left: windowWidth < 768 ? 10 : 20, 
                           bottom: combinedData.length > 10 ? 90 : 60 
                         }}
                       >
@@ -407,9 +407,9 @@ export default function Home() {
                           tickFormatter={formatDate}
                           angle={-45} 
                           textAnchor="end"
-                          height={80}
-                          dy={20}
-                          padding={{ left: 20, right: 20 }}
+                          height={windowWidth < 768 ? 60 : 80}
+                          dy={windowWidth < 768 ? 10 : 20}
+                          padding={{ left: windowWidth < 768 ? 10 : 20, right: windowWidth < 768 ? 10 : 20 }}
                           scale="point"
                           type="category"
                           interval={Math.max(1, Math.floor(combinedData.length / (windowWidth < 768 ? 10 : 20)))}
@@ -417,14 +417,14 @@ export default function Home() {
                         />
                         <YAxis 
                           yAxisId="left"
-                          width={50}
+                          width={windowWidth < 768 ? 40 : 50}
                           tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['daily_utilization_air_time', 'daily_utilization_block_time'])]}
                         />
                         <YAxis 
                           yAxisId="right"
                           orientation="right"
-                          width={50}
+                          width={windowWidth < 768 ? 40 : 50}
                           tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['cumulative_daily_utilization_air_time', 'cumulative_daily_utilization_block_time'])]}
                         />
@@ -440,8 +440,8 @@ export default function Home() {
                         />
                         <Legend 
                           verticalAlign="bottom" 
-                          height={60} 
-                          wrapperStyle={{ paddingTop: '10px' }}
+                          height={windowWidth < 768 ? 45 : 60} 
+                          wrapperStyle={{ paddingTop: windowWidth < 768 ? '5px' : '10px' }}
                           iconSize={windowWidth < 768 ? 8 : 10}
                           iconType="circle"
                         />
@@ -466,7 +466,7 @@ export default function Home() {
                           name="累计日利用率(空中)" 
                           stroke="#E15759"
                           connectNulls={true}
-                          dot={false}
+                          dot={{ r: windowWidth < 768 ? 2 : 4 }}
                           strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                         <Line 
@@ -476,7 +476,7 @@ export default function Home() {
                           name="累计日利用率(空地)" 
                           stroke="#76B7B2"
                           connectNulls={true}
-                          dot={false}
+                          dot={{ r: windowWidth < 768 ? 2 : 4 }}
                           strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                       </ComposedChart>
@@ -486,9 +486,9 @@ export default function Home() {
               </div>
               
               {/* 飞行循环数据 */}
-              <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-3 sm:mb-6">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">飞行循环数据</h2>
+              <div className="bg-white p-1 sm:p-6 rounded-lg shadow-md">
+                <div className="flex justify-between items-center mb-1 sm:mb-6">
+                  <h2 className="text-base sm:text-xl font-semibold text-gray-800">飞行循环数据</h2>
                 </div>
                 
                 {combinedData.length === 0 ? (
@@ -496,14 +496,14 @@ export default function Home() {
                     <p className="text-gray-500">暂无数据</p>
                   </div>
                 ) : (
-                  <div className="h-[350px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
+                  <div className="h-[450px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={combinedData}
                         margin={{ 
                           top: 20, 
-                          right: 30, 
-                          left: 20, 
+                          right: windowWidth < 768 ? 15 : 30, 
+                          left: windowWidth < 768 ? 10 : 20, 
                           bottom: combinedData.length > 10 ? 90 : 60 
                         }}
                       >
@@ -513,9 +513,9 @@ export default function Home() {
                           tickFormatter={formatDate}
                           angle={-45} 
                           textAnchor="end"
-                          height={80}
-                          dy={20}
-                          padding={{ left: 20, right: 20 }}
+                          height={windowWidth < 768 ? 60 : 80}
+                          dy={windowWidth < 768 ? 10 : 20}
+                          padding={{ left: windowWidth < 768 ? 10 : 20, right: windowWidth < 768 ? 10 : 20 }}
                           scale="point"
                           type="category"
                           interval={Math.max(1, Math.floor(combinedData.length / (windowWidth < 768 ? 10 : 20)))}
@@ -523,14 +523,14 @@ export default function Home() {
                         />
                         <YAxis 
                           yAxisId="left"
-                          width={50}
+                          width={windowWidth < 768 ? 40 : 50}
                           tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['daily_fc'])]}
                         />
                         <YAxis 
                           yAxisId="right"
                           orientation="right"
-                          width={50}
+                          width={windowWidth < 768 ? 40 : 50}
                           tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['cumulative_fc'])]}
                         />
@@ -546,8 +546,8 @@ export default function Home() {
                         />
                         <Legend 
                           verticalAlign="bottom" 
-                          height={60} 
-                          wrapperStyle={{ paddingTop: '10px' }}
+                          height={windowWidth < 768 ? 45 : 60} 
+                          wrapperStyle={{ paddingTop: windowWidth < 768 ? '5px' : '10px' }}
                           iconSize={windowWidth < 768 ? 8 : 10}
                           iconType="circle"
                         />
@@ -566,7 +566,7 @@ export default function Home() {
                           stroke="#E15759"
                           activeDot={{ r: windowWidth < 768 ? 4 : 8 }}
                           connectNulls={true}
-                          dot={false}
+                          dot={{ r: windowWidth < 768 ? 2 : 4 }}
                           strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                       </ComposedChart>
