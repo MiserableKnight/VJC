@@ -23,4 +23,38 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 图表容器在移动端的样式优化 */
+@media (max-width: 767px) {
+  /* 确保图表容器不溢出 */
+  .recharts-responsive-container {
+    min-width: 300px;
+  }
+  
+  /* 调整图表内部文字大小 */
+  .recharts-text, .recharts-label {
+    font-size: 10px !important;
+  }
+  
+  /* 优化小屏幕上的滚动体验 */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    position: relative;
+  }
+  
+  /* 添加横向滚动提示 */
+  .overflow-x-auto::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 40px;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.7));
+    pointer-events: none;
+  }
 }

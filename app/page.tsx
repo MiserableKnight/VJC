@@ -29,6 +29,14 @@ type CumulativeData = {
   flight_leg: number;
 };
 
+const getWindowWidth = () => {
+  if (typeof window !== 'undefined') {
+    return window.innerWidth;
+  }
+  // 默认移动设备宽度
+  return 375; 
+};
+
 export default function Home() {
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
   const [cumulativeData, setCumulativeData] = useState<CumulativeData[]>([]);
@@ -40,6 +48,22 @@ export default function Home() {
   const [columns, setColumns] = useState<string[]>([]);
   const [sampleData, setSampleData] = useState<any>(null);
   const [combinedData, setCombinedData] = useState<any[]>([]);
+  const [windowWidth, setWindowWidth] = useState(getWindowWidth());
+  
+  useEffect(() => {
+    // 初始化数据获取
+    fetchData();
+    
+    // 设置窗口尺寸监听
+    function handleResize() {
+      setWindowWidth(getWindowWidth());
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -100,10 +124,6 @@ export default function Home() {
       setIsRetrying(false);
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const handleRetry = () => {
     setIsRetrying(true);
@@ -202,21 +222,21 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen p-6 bg-gray-50">
-      <h1 className="text-2xl font-bold text-center my-8 text-gray-800">飞行运营数据可视化平台</h1>
+    <main className="min-h-screen p-2 sm:p-4 md:p-6 bg-gray-50">
+      <h1 className="text-xl sm:text-2xl font-bold text-center my-4 sm:my-8 text-gray-800">飞行运营数据可视化平台</h1>
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] mb-4"></div>
-            <p className="text-xl">{isRetrying ? '正在重新获取数据...' : '加载中...'}</p>
+            <p className="text-lg sm:text-xl">{isRetrying ? '正在重新获取数据...' : '加载中...'}</p>
           </div>
         </div>
       ) : error ? (
-        <div className="flex flex-col justify-center items-center h-64 bg-red-50 p-6 rounded-lg border border-red-200">
-          <p className="text-red-500 mb-4">{error}</p>
-          <p className="text-gray-600 mb-6">可能的原因:</p>
-          <ul className="list-disc text-gray-600 mb-8 pl-5">
+        <div className="flex flex-col justify-center items-center h-64 bg-red-50 p-3 sm:p-6 rounded-lg border border-red-200">
+          <p className="text-red-500 mb-2 sm:mb-4 text-center">{error}</p>
+          <p className="text-gray-600 mb-3 sm:mb-6">可能的原因:</p>
+          <ul className="list-disc text-gray-600 mb-4 sm:mb-8 pl-5">
             <li>数据库连接配置不正确</li>
             <li>数据库服务暂时不可用</li>
             <li>网络连接问题</li>
@@ -231,9 +251,9 @@ export default function Home() {
           </button>
         </div>
       ) : (
-        <div className="space-y-16 max-w-7xl mx-auto">
+        <div className="space-y-8 sm:space-y-16 max-w-7xl mx-auto">
           {dailyData.length === 0 && cumulativeData.length === 0 ? (
-            <div className="flex justify-center items-center h-64 bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+            <div className="flex justify-center items-center h-64 bg-yellow-50 p-3 sm:p-6 rounded-lg border border-yellow-200">
               <div className="text-center">
                 <p className="text-lg text-yellow-700 mb-4">数据库中没有找到数据</p>
                 <button 
@@ -247,27 +267,32 @@ export default function Home() {
           ) : (
             <>
               {/* 空时数据（空中时间和空地时间） */}
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">空时数据</h2>
+              <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md">
+                <div className="flex justify-between items-center mb-3 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">空时数据</h2>
                   <button 
                     onClick={handleRetry}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-1 px-3 rounded-full"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium py-1 px-2 sm:px-3 rounded-full"
                   >
                     刷新
                   </button>
                 </div>
                 
                 {combinedData.length === 0 ? (
-                  <div className="h-80 w-full flex justify-center items-center bg-gray-50 rounded-lg">
+                  <div className="h-64 sm:h-80 w-full flex justify-center items-center bg-gray-50 rounded-lg">
                     <p className="text-gray-500">暂无数据</p>
                   </div>
                 ) : (
-                  <div className="h-[550px] w-full">
+                  <div className="h-[350px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={combinedData}
-                        margin={{ top: 30, right: 50, left: 30, bottom: 90 }}
+                        margin={{ 
+                          top: 20, 
+                          right: 30, 
+                          left: 20, 
+                          bottom: combinedData.length > 10 ? 90 : 60 
+                        }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
@@ -275,44 +300,57 @@ export default function Home() {
                           tickFormatter={formatDate}
                           angle={-45} 
                           textAnchor="end"
-                          height={100}
-                          dy={30}
-                          padding={{ left: 30, right: 30 }}
+                          height={80}
+                          dy={20}
+                          padding={{ left: 20, right: 20 }}
                           scale="point"
                           type="category"
-                          interval={Math.max(1, Math.floor(combinedData.length / 20))}
+                          interval={Math.max(1, Math.floor(combinedData.length / (windowWidth < 768 ? 10 : 20)))}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                         />
                         <YAxis 
                           yAxisId="left"
-                          width={80}
+                          width={50}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['daily_air_time', 'daily_block_time'])]}
-                          label={{ value: '空时（当日）', angle: -90, position: 'insideLeft', dy: 30 }}
                         />
                         <YAxis 
                           yAxisId="right"
                           orientation="right"
-                          width={80}
+                          width={50}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['cumulative_air_time', 'cumulative_block_time'])]}
-                          label={{ value: '空时（累计）', angle: 90, position: 'insideRight', dy: -30 }}
                         />
                         <Tooltip 
                           labelFormatter={formatDate} 
-                          wrapperStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}
+                          wrapperStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #ddd', 
+                            borderRadius: '8px', 
+                            padding: '8px',
+                            fontSize: windowWidth < 768 ? '12px' : '14px'
+                          }}
                         />
-                        <Legend verticalAlign="bottom" height={60} wrapperStyle={{ paddingTop: '20px' }} />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={60} 
+                          wrapperStyle={{ paddingTop: '10px' }}
+                          iconSize={windowWidth < 768 ? 8 : 10}
+                          iconType="circle"
+                        />
                         <Bar 
                           yAxisId="left"
                           dataKey="daily_air_time" 
                           name="当日空中时间" 
                           fill="#4E79A7" 
-                          barSize={20}
+                          barSize={windowWidth < 768 ? 10 : 20}
                         />
                         <Bar 
                           yAxisId="left"
                           dataKey="daily_block_time" 
                           name="当日空地时间" 
                           fill="#F28E2B"
-                          barSize={20} 
+                          barSize={windowWidth < 768 ? 10 : 20} 
                         />
                         <Line 
                           yAxisId="right"
@@ -320,10 +358,10 @@ export default function Home() {
                           dataKey="cumulative_air_time" 
                           name="累计空中时间" 
                           stroke="#E15759" 
-                          activeDot={{ r: 8 }}
+                          activeDot={{ r: windowWidth < 768 ? 4 : 8 }}
                           connectNulls={true}
-                          dot={combinedData.length > 30 ? false : { r: 3 }}
-                          strokeWidth={3}
+                          dot={false}
+                          strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                         <Line 
                           yAxisId="right"
@@ -332,8 +370,8 @@ export default function Home() {
                           name="累计空地时间" 
                           stroke="#76B7B2"
                           connectNulls={true}
-                          dot={combinedData.length > 30 ? false : { r: 3 }}
-                          strokeWidth={3}
+                          dot={false}
+                          strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
@@ -342,21 +380,26 @@ export default function Home() {
               </div>
               
               {/* 日利用率数据 */}
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">日利用率数据</h2>
+              <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md">
+                <div className="flex justify-between items-center mb-3 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">日利用率数据</h2>
                 </div>
                 
                 {combinedData.length === 0 ? (
-                  <div className="h-80 w-full flex justify-center items-center bg-gray-50 rounded-lg">
+                  <div className="h-64 sm:h-80 w-full flex justify-center items-center bg-gray-50 rounded-lg">
                     <p className="text-gray-500">暂无数据</p>
                   </div>
                 ) : (
-                  <div className="h-[550px] w-full">
+                  <div className="h-[350px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={combinedData}
-                        margin={{ top: 30, right: 50, left: 30, bottom: 90 }}
+                        margin={{ 
+                          top: 20, 
+                          right: 30, 
+                          left: 20, 
+                          bottom: combinedData.length > 10 ? 90 : 60 
+                        }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
@@ -364,44 +407,57 @@ export default function Home() {
                           tickFormatter={formatDate}
                           angle={-45} 
                           textAnchor="end"
-                          height={100}
-                          dy={30}
-                          padding={{ left: 30, right: 30 }}
+                          height={80}
+                          dy={20}
+                          padding={{ left: 20, right: 20 }}
                           scale="point"
                           type="category"
-                          interval={Math.max(1, Math.floor(combinedData.length / 20))}
+                          interval={Math.max(1, Math.floor(combinedData.length / (windowWidth < 768 ? 10 : 20)))}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                         />
                         <YAxis 
                           yAxisId="left"
-                          width={80}
+                          width={50}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['daily_utilization_air_time', 'daily_utilization_block_time'])]}
-                          label={{ value: '日利用率（当日）', angle: -90, position: 'insideLeft', dy: 30 }}
                         />
                         <YAxis 
                           yAxisId="right"
                           orientation="right"
-                          width={80}
+                          width={50}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['cumulative_daily_utilization_air_time', 'cumulative_daily_utilization_block_time'])]}
-                          label={{ value: '日利用率（累计）', angle: 90, position: 'insideRight', dy: -30 }}
                         />
                         <Tooltip 
                           labelFormatter={formatDate} 
-                          wrapperStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}
+                          wrapperStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #ddd', 
+                            borderRadius: '8px', 
+                            padding: '8px',
+                            fontSize: windowWidth < 768 ? '12px' : '14px'
+                          }}
                         />
-                        <Legend verticalAlign="bottom" height={60} wrapperStyle={{ paddingTop: '20px' }} />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={60} 
+                          wrapperStyle={{ paddingTop: '10px' }}
+                          iconSize={windowWidth < 768 ? 8 : 10}
+                          iconType="circle"
+                        />
                         <Bar 
                           yAxisId="left"
                           dataKey="daily_utilization_air_time" 
                           name="日利用率(空中)" 
                           fill="#4E79A7"
-                          barSize={20}
+                          barSize={windowWidth < 768 ? 10 : 20}
                         />
                         <Bar 
                           yAxisId="left"
                           dataKey="daily_utilization_block_time" 
                           name="日利用率(空地)" 
                           fill="#F28E2B"
-                          barSize={20}
+                          barSize={windowWidth < 768 ? 10 : 20}
                         />
                         <Line 
                           yAxisId="right"
@@ -410,8 +466,8 @@ export default function Home() {
                           name="累计日利用率(空中)" 
                           stroke="#E15759"
                           connectNulls={true}
-                          dot={combinedData.length > 30 ? false : { r: 3 }}
-                          strokeWidth={3}
+                          dot={false}
+                          strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                         <Line 
                           yAxisId="right"
@@ -420,8 +476,8 @@ export default function Home() {
                           name="累计日利用率(空地)" 
                           stroke="#76B7B2"
                           connectNulls={true}
-                          dot={combinedData.length > 30 ? false : { r: 3 }}
-                          strokeWidth={3}
+                          dot={false}
+                          strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
@@ -430,21 +486,26 @@ export default function Home() {
               </div>
               
               {/* 飞行循环数据 */}
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">飞行循环数据</h2>
+              <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md">
+                <div className="flex justify-between items-center mb-3 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">飞行循环数据</h2>
                 </div>
                 
                 {combinedData.length === 0 ? (
-                  <div className="h-80 w-full flex justify-center items-center bg-gray-50 rounded-lg">
+                  <div className="h-64 sm:h-80 w-full flex justify-center items-center bg-gray-50 rounded-lg">
                     <p className="text-gray-500">暂无数据</p>
                   </div>
                 ) : (
-                  <div className="h-[550px] w-full">
+                  <div className="h-[350px] sm:h-[450px] md:h-[550px] w-full overflow-x-auto">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={combinedData}
-                        margin={{ top: 30, right: 50, left: 30, bottom: 90 }}
+                        margin={{ 
+                          top: 20, 
+                          right: 30, 
+                          left: 20, 
+                          bottom: combinedData.length > 10 ? 90 : 60 
+                        }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
@@ -452,37 +513,50 @@ export default function Home() {
                           tickFormatter={formatDate}
                           angle={-45} 
                           textAnchor="end"
-                          height={100}
-                          dy={30}
-                          padding={{ left: 30, right: 30 }}
+                          height={80}
+                          dy={20}
+                          padding={{ left: 20, right: 20 }}
                           scale="point"
                           type="category"
-                          interval={Math.max(1, Math.floor(combinedData.length / 20))}
+                          interval={Math.max(1, Math.floor(combinedData.length / (windowWidth < 768 ? 10 : 20)))}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                         />
                         <YAxis 
                           yAxisId="left"
-                          width={80}
+                          width={50}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['daily_fc'])]}
-                          label={{ value: 'FC（当日）', angle: -90, position: 'insideLeft', dy: 30 }}
                         />
                         <YAxis 
                           yAxisId="right"
                           orientation="right"
-                          width={80}
+                          width={50}
+                          tick={{ fontSize: windowWidth < 768 ? 10 : 12 }}
                           domain={[0, calculateMaxValue(combinedData, ['cumulative_fc'])]}
-                          label={{ value: 'FC（累计）', angle: 90, position: 'insideRight', dy: -30 }}
                         />
                         <Tooltip 
                           labelFormatter={formatDate} 
-                          wrapperStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}
+                          wrapperStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #ddd', 
+                            borderRadius: '8px', 
+                            padding: '8px',
+                            fontSize: windowWidth < 768 ? '12px' : '14px'
+                          }}
                         />
-                        <Legend verticalAlign="bottom" height={60} wrapperStyle={{ paddingTop: '20px' }} />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={60} 
+                          wrapperStyle={{ paddingTop: '10px' }}
+                          iconSize={windowWidth < 768 ? 8 : 10}
+                          iconType="circle"
+                        />
                         <Bar 
                           yAxisId="left"
                           dataKey="daily_fc" 
                           name="当日飞行循环" 
                           fill="#4E79A7"
-                          barSize={20}
+                          barSize={windowWidth < 768 ? 10 : 20}
                         />
                         <Line 
                           yAxisId="right"
@@ -490,10 +564,10 @@ export default function Home() {
                           dataKey="cumulative_fc" 
                           name="累计飞行循环" 
                           stroke="#E15759"
-                          activeDot={{ r: 8 }}
+                          activeDot={{ r: windowWidth < 768 ? 4 : 8 }}
                           connectNulls={true}
-                          dot={combinedData.length > 30 ? false : { r: 3 }}
-                          strokeWidth={3}
+                          dot={false}
+                          strokeWidth={windowWidth < 768 ? 2 : 3}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
