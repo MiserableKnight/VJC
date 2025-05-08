@@ -38,7 +38,7 @@ export function logError(error: Error, errorInfo?: ErrorInfo): void {
   const errorLog: ErrorLog = {
     message: error.message,
     stack: error.stack,
-    componentStack: errorInfo?.componentStack,
+    componentStack: errorInfo?.componentStack || undefined,
     type: ErrorType.RENDER,
     severity: ErrorSeverity.HIGH,
     timestamp: Date.now(),
