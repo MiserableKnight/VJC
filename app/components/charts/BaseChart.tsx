@@ -15,10 +15,17 @@ import ReactECharts from 'echarts-for-react';
 import {
   getChartMargin,
   getTooltipConfig,
-  useWindowSize
 } from '../../utils/chartUtils';
 import { logChartError } from '../../utils/errorLogger';
 import { ChartDataItemGQL } from '../../context/ChartDataContext';
+import { useResponsive } from '../../hooks/useResponsive';
+import { 
+  defaultXAxisConfig, 
+  defaultYAxisConfig, 
+  defaultTooltipConfig, 
+  defaultLegendConfig,
+  calculateChartInterval
+} from '../../utils/responsiveChartConfig';
 
 export interface BaseChartProps {
   data: ChartDataItemGQL[];
@@ -46,8 +53,7 @@ export const BaseChart: FC<BaseChartProps> = ({
   title,
   chartType = 'ComposedChart'
 }) => {
-  const { width } = useWindowSize();
-  const isMobile = width < 768;
+  const { width, isMobile, breakpoint, value } = useResponsive();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -142,6 +148,13 @@ export const BaseChart: FC<BaseChartProps> = ({
     return [0, calculatedMax > 0 ? calculatedMax : 'auto'];
   };
   
+  // 获取响应式配置
+  const xAxisConfig = value(defaultXAxisConfig);
+  const yAxisConfig = value(defaultYAxisConfig);
+  const tooltipConfig = value(defaultTooltipConfig);
+  const legendConfig = value(defaultLegendConfig);
+  const interval = calculateChartInterval(data.length, breakpoint);
+  
   return (
     <div className={`${height} w-full overflow-x-auto`}>
       <ResponsiveContainer width="100%" height="100%">
@@ -163,31 +176,31 @@ export const BaseChart: FC<BaseChartProps> = ({
             }}
             angle={-45} 
             textAnchor="end"
-            height={isMobile ? 70 : 80}
-            dy={isMobile ? 15 : 20}
-            padding={{ left: isMobile ? 5 : 10, right: isMobile ? 5 : 10 }}
+            height={xAxisConfig.height}
+            dy={xAxisConfig.dy}
+            padding={xAxisConfig.padding}
             scale="point"
             type="category"
-            interval={Math.max(0, Math.floor(data.length / (isMobile ? 8 : 15)))}
-            tick={{ fontSize: isMobile ? 9 : 11 }}
+            interval={interval}
+            tick={{ fontSize: xAxisConfig.tick.fontSize }}
           />
           <YAxis 
             yAxisId="left"
-            width={isMobile ? 35 : 45}
-            tick={{ fontSize: isMobile ? 9 : 11 }}
+            width={yAxisConfig.width}
+            tick={{ fontSize: yAxisConfig.tick.fontSize }}
             domain={getYAxisDomain(leftAxisDataKeys)}
             allowDataOverflow={false}
           />
           <YAxis 
             yAxisId="right"
             orientation="right"
-            width={isMobile ? 35 : 45}
-            tick={{ fontSize: isMobile ? 9 : 11 }}
+            width={yAxisConfig.width}
+            tick={{ fontSize: yAxisConfig.tick.fontSize }}
             domain={getYAxisDomain(rightAxisDataKeys)}
             allowDataOverflow={false}
           />
           <Tooltip 
-            {...getTooltipConfig(width)}
+            wrapperStyle={tooltipConfig.wrapperStyle}
             labelFormatter={(label: string) => {
               if (!label) return '';
               try {
@@ -200,9 +213,9 @@ export const BaseChart: FC<BaseChartProps> = ({
           />
           <Legend 
             verticalAlign="bottom" 
-            height={isMobile ? 50 : 60} 
-            wrapperStyle={{ paddingTop: isMobile ? '10px' : '15px', paddingBottom: '10px'}} 
-            iconSize={isMobile ? 8 : 10}
+            height={legendConfig.height} 
+            wrapperStyle={legendConfig.wrapperStyle} 
+            iconSize={legendConfig.iconSize}
             iconType="circle"
             align="center"
           />

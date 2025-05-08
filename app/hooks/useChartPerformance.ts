@@ -1,207 +1,141 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { ChartDataItemGQL } from '../context/ChartDataContext';
+import { logChartError } from '../utils/errorLogger';
 
-interface PerformanceOptions {
-  id: string;
-  trackLongTasks?: boolean;
-  trackFPS?: boolean;
-  trackMemory?: boolean;
-  logLevel?: 'debug' | 'info' | 'warn' | 'error';
-}
-
-interface PerformanceMetrics {
-  renderTime?: number;
-  longTasks?: Array<{duration: number, startTime: number}>;
-  fps?: number;
+// 图表性能统计类型
+interface ChartPerformanceStats {
+  renderTime: number;
+  dataPointCount: number;
+  seriesCount: number;
   memoryUsage?: number;
 }
 
-/**
- * 自定义钩子用于监控图表渲染性能
- * 
- * @param options 性能监控配置选项
- * @returns 性能指标对象的引用
- */
-export function useChartPerformance(options: PerformanceOptions) {
-  const { 
-    id, 
-    trackLongTasks = true, 
-    trackFPS = false, 
-    trackMemory = false,
-    logLevel = 'info' 
-  } = options;
-  
-  const metricsRef = useRef<PerformanceMetrics>({});
-  const observerRef = useRef<PerformanceObserver | null>(null);
-  const startTimeRef = useRef<number>(0);
-  const frameCountRef = useRef<number>(0);
-  const lastFrameTimeRef = useRef<number>(0);
-  
-  // 记录日志，根据日志级别决定使用哪个console方法
-  const logMetric = (message: string, metric?: any, level: 'debug' | 'info' | 'warn' | 'error' = 'info') => {
-    const logLevels = { debug: 0, info: 1, warn: 2, error: 3 };
-    if (logLevels[level] >= logLevels[logLevel]) {
-      switch (level) {
-        case 'debug':
-          console.debug(`[Chart ${id}] ${message}`, metric);
-          break;
-        case 'warn':
-          console.warn(`[Chart ${id}] ${message}`, metric);
-          break;
-        case 'error':
-          console.error(`[Chart ${id}] ${message}`, metric);
-          break;
-        default:
-          console.log(`[Chart ${id}] ${message}`, metric);
-      }
-    }
-  };
-  
-  // 跟踪长任务
-  useEffect(() => {
-    if (!trackLongTasks || typeof window.PerformanceObserver === 'undefined') return;
-    
-    try {
-      observerRef.current = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        const longTasksMetrics = entries.map(entry => ({
-          duration: entry.duration,
-          startTime: entry.startTime
-        }));
-        
-        metricsRef.current.longTasks = [
-          ...(metricsRef.current.longTasks || []),
-          ...longTasksMetrics
-        ];
-        
-        entries.forEach(entry => {
-          logMetric('检测到长任务', { duration: `${entry.duration}ms` }, 'warn');
-        });
-      });
-      
-      observerRef.current.observe({ entryTypes: ['longtask'] });
-      logMetric('已启用长任务监控', undefined, 'debug');
-    } catch (e) {
-      logMetric('无法启用长任务监控', e, 'error');
-    }
-    
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
-    };
-  }, [id, trackLongTasks, logLevel]);
-  
-  // 跟踪FPS
-  useEffect(() => {
-    if (!trackFPS) return;
-    
-    startTimeRef.current = performance.now();
-    frameCountRef.current = 0;
-    lastFrameTimeRef.current = startTimeRef.current;
-    
-    const trackFrame = () => {
-      const now = performance.now();
-      frameCountRef.current++;
-      
-      // 每秒计算一次FPS
-      if (now - lastFrameTimeRef.current >= 1000) {
-        const elapsedSecs = (now - lastFrameTimeRef.current) / 1000;
-        const fps = Math.round(frameCountRef.current / elapsedSecs);
-        metricsRef.current.fps = fps;
-        
-        if (fps < 30) {
-          logMetric('FPS过低', { fps }, 'warn');
-        } else {
-          logMetric('当前FPS', { fps }, 'debug');
-        }
-        
-        frameCountRef.current = 0;
-        lastFrameTimeRef.current = now;
-      }
-      
-      frameIdRef.current = requestAnimationFrame(trackFrame);
-    };
-    
-    const frameIdRef = { current: requestAnimationFrame(trackFrame) };
-    
-    return () => {
-      cancelAnimationFrame(frameIdRef.current);
-    };
-  }, [id, trackFPS, logLevel]);
-  
-  // 跟踪内存使用
-  useEffect(() => {
-    if (!trackMemory || !('memory' in performance)) return;
-    
-    const memoryCheckInterval = setInterval(() => {
-      // @ts-ignore: memory属性在标准Performance接口中不存在，但在Chrome中可用
-      const memoryInfo = (performance as any).memory;
-      if (memoryInfo) {
-        const usedHeapSize = memoryInfo.usedJSHeapSize / (1024 * 1024); // MB
-        metricsRef.current.memoryUsage = usedHeapSize;
-        
-        if (usedHeapSize > 100) { // 如果使用超过100MB，发出警告
-          logMetric('内存使用量高', { usedHeapSize: `${usedHeapSize.toFixed(2)}MB` }, 'warn');
-        } else {
-          logMetric('当前内存使用', { usedHeapSize: `${usedHeapSize.toFixed(2)}MB` }, 'debug');
-        }
-      }
-    }, 5000); // 每5秒检查一次
-    
-    return () => {
-      clearInterval(memoryCheckInterval);
-    };
-  }, [id, trackMemory, logLevel]);
-  
-  // 记录渲染时间
-  useEffect(() => {
-    startTimeRef.current = performance.now();
-    
-    return () => {
-      const renderTime = performance.now() - startTimeRef.current;
-      metricsRef.current.renderTime = renderTime;
-      
-      if (renderTime > 500) {
-        logMetric('渲染时间过长', { renderTime: `${renderTime.toFixed(2)}ms` }, 'warn');
-      } else {
-        logMetric('渲染完成', { renderTime: `${renderTime.toFixed(2)}ms` }, 'info');
-      }
-      
-      // 记录所有指标的汇总
-      logMetric('性能指标汇总', { 
-        renderTime: `${renderTime.toFixed(2)}ms`,
-        fps: metricsRef.current.fps,
-        longTasks: metricsRef.current.longTasks?.length || 0,
-        memoryUsage: metricsRef.current.memoryUsage ? 
-          `${metricsRef.current.memoryUsage.toFixed(2)}MB` : 'N/A'
-      });
-    };
-  }, [id, logLevel]);
-  
-  return metricsRef;
+// 钩子函数接口
+interface UseChartPerformanceResult {
+  startRender: () => void;
+  endRender: () => void;
+  performanceStats: ChartPerformanceStats | null;
+  isPerformanceIssue: boolean;
+}
+
+// 性能错误信息类型
+interface PerformanceErrorInfo {
+  component: string;
+  type: string;
 }
 
 /**
- * 将性能数据发送到分析服务器
- * 
- * @param id 图表ID
- * @param metrics 性能指标
+ * 图表性能监控自定义钩子
+ * 用于监控图表渲染性能，并提供优化建议
  */
-export function reportPerformanceMetrics(id: string, metrics: PerformanceMetrics) {
-  // 这里可以实现向分析服务器发送数据的逻辑
-  // 例如使用fetch或beacon API发送数据
-  if ('sendBeacon' in navigator) {
-    const data = JSON.stringify({
-      id,
-      metrics,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      url: window.location.href
-    });
+export function useChartPerformance(
+  chartId: string,
+  data?: ChartDataItemGQL[],
+  seriesCount = 1
+): UseChartPerformanceResult {
+  // 使用useRef而不是useState来存储开始时间，避免触发重新渲染
+  const renderStartTimeRef = useRef<number | null>(null);
+  const [performanceStats, setPerformanceStats] = useState<ChartPerformanceStats | null>(null);
+
+  // 使用useMemo计算数据点数量，避免重复计算
+  const dataPointCount = useMemo(() => {
+    if (!data) return 0;
+    return data.length * seriesCount;
+  }, [data, seriesCount]);
+
+  // 使用useMemo判断是否存在性能问题
+  const isPerformanceIssue = useMemo(() => {
+    if (!performanceStats) return false;
     
-    navigator.sendBeacon('/api/performance-metrics', data);
-  }
+    // 根据经验值判断性能问题
+    const { renderTime, dataPointCount } = performanceStats;
+    
+    // 大于500ms的渲染时间被认为可能存在性能问题
+    if (renderTime > 500) return true;
+    
+    // 大量数据点且渲染时间超过200ms
+    if (dataPointCount > 1000 && renderTime > 200) return true;
+    
+    return false;
+  }, [performanceStats]);
+
+  // 开始渲染计时 - 使用useCallback避免函数重新创建
+  const startRender = useCallback(() => {
+    try {
+      // 只有在尚未开始计时时才设置开始时间
+      if (renderStartTimeRef.current === null) {
+        renderStartTimeRef.current = performance.now();
+      }
+    } catch (error) {
+      // 使用图表错误日志记录性能问题
+      logChartError(
+        error, 
+        `performance-${chartId}`, 
+        { action: 'startRender' }
+      );
+    }
+  }, [chartId]);
+
+  // 结束渲染计时并收集性能数据 - 使用useCallback避免函数重新创建
+  const endRender = useCallback(() => {
+    try {
+      if (renderStartTimeRef.current === null) return;
+      
+      const endTime = performance.now();
+      const renderTime = endTime - renderStartTimeRef.current;
+      
+      // 尝试获取内存使用情况（仅在支持的浏览器中工作）
+      let memoryUsage;
+      if (performance && (performance as any).memory) {
+        memoryUsage = (performance as any).memory.usedJSHeapSize / (1024 * 1024); // MB
+      }
+      
+      // 更新性能统计
+      setPerformanceStats({
+        renderTime,
+        dataPointCount,
+        seriesCount,
+        memoryUsage,
+      });
+      
+      // 重置开始时间，准备下次渲染测量
+      renderStartTimeRef.current = null;
+      
+      // 性能问题日志记录
+      if (
+        renderTime > 500 || 
+        (dataPointCount > 1000 && renderTime > 200)
+      ) {
+        console.warn(`Chart performance issue detected for ${chartId}: ${renderTime.toFixed(2)}ms, ${dataPointCount} data points`);
+      }
+    } catch (error) {
+      // 使用图表错误日志记录性能问题
+      logChartError(
+        error, 
+        `performance-${chartId}`, 
+        { 
+          action: 'endRender',
+          dataPoints: dataPointCount
+        }
+      );
+    }
+  }, [chartId, dataPointCount, seriesCount]);
+
+  // 清理函数
+  useEffect(() => {
+    return () => {
+      // 组件卸载时清理状态
+      renderStartTimeRef.current = null;
+      setPerformanceStats(null);
+    };
+  }, []);
+
+  return {
+    startRender,
+    endRender,
+    performanceStats,
+    isPerformanceIssue,
+  };
 } 

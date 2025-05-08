@@ -1,10 +1,11 @@
 'use client';
 
-import { FC } from 'react';
-import { BaseChart, BaseChartProps } from './BaseChart';
+import React, { FC, useMemo } from 'react';
+import { BaseChart } from './BaseChart';
 import { ChartDataItemGQL } from '../../context/ChartDataContext';
 import { ErrorBoundary } from '../ErrorBoundary';
-import { useWindowSize, formatDate } from '../../utils/chartUtils';
+import { useResponsive } from '../../hooks/useResponsive';
+import { getChartColors, formatDate } from '../../utils/chartUtils';
 
 interface FlightCycleChartProps {
   data: ChartDataItemGQL[];
@@ -15,15 +16,16 @@ interface FlightCycleChartProps {
  * 飞行循环图表组件
  * 展示当日和累计的飞行循环和航段数据
  */
-export const FlightCycleChart: FC<FlightCycleChartProps> = ({ data, onRefresh }) => {
-  const { width } = useWindowSize();
-  const isMobile = width < 768;
-
-  const chartOptions = {
+const FlightCycleChartComponent: FC<FlightCycleChartProps> = ({ data, onRefresh }) => {
+  const { value } = useResponsive();
+  const chartColors = getChartColors();
+  
+  // 使用useMemo缓存图表配置
+  const chartOptions = useMemo(() => ({
     title: {
       text: '飞行循环和飞行航段',
       left: 'center',
-      textStyle: { fontSize: isMobile ? 14 : 18 }
+      textStyle: { fontSize: value({ xs: 14, md: 18, base: 18 }) }
     },
     tooltip: {
       trigger: 'axis',
@@ -33,12 +35,12 @@ export const FlightCycleChart: FC<FlightCycleChartProps> = ({ data, onRefresh })
     legend: {
       data: ['飞行循环', '飞行航段', '累计飞行循环', '累计飞行航段'],
       top: 'bottom',
-      textStyle: { fontSize: isMobile ? 10 : 12 }
+      textStyle: { fontSize: value({ xs: 10, md: 12, base: 12 }) }
     },
     grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '15%',
+      left: value({ xs: '3%', md: '4%', base: '4%' }),
+      right: value({ xs: '4%', md: '5%', base: '5%' }),
+      bottom: value({ xs: '15%', md: '12%', base: '12%' }),
       containLabel: true
     },
     xAxis: [
@@ -47,7 +49,7 @@ export const FlightCycleChart: FC<FlightCycleChartProps> = ({ data, onRefresh })
         data: data.map(item => item.date),
         axisPointer: { type: 'shadow' },
         axisLabel: {
-          fontSize: isMobile ? 9 : 11,
+          fontSize: value({ xs: 9, md: 11, base: 11 }),
           rotate: data.length > 10 ? 45 : 0,
           formatter: (value: string) => formatDate(value) // X轴标签格式化日期
         }
@@ -58,15 +60,15 @@ export const FlightCycleChart: FC<FlightCycleChartProps> = ({ data, onRefresh })
         type: 'value',
         name: '数量',
         min: 0,
-        axisLabel: { formatter: '{value}', fontSize: isMobile ? 9 : 11 },
-        nameTextStyle: { fontSize: isMobile ? 10 : 12 }
+        axisLabel: { formatter: '{value}', fontSize: value({ xs: 9, md: 11, base: 11 }) },
+        nameTextStyle: { fontSize: value({ xs: 10, md: 12, base: 12 }) }
       },
       {
         type: 'value',
         name: '累计数量',
         min: 0,
-        axisLabel: { formatter: '{value}', fontSize: isMobile ? 9 : 11 },
-        nameTextStyle: { fontSize: isMobile ? 10 : 12 }
+        axisLabel: { formatter: '{value}', fontSize: value({ xs: 9, md: 11, base: 11 }) },
+        nameTextStyle: { fontSize: value({ xs: 10, md: 12, base: 12 }) }
       }
     ],
     series: [
@@ -74,20 +76,20 @@ export const FlightCycleChart: FC<FlightCycleChartProps> = ({ data, onRefresh })
         name: '飞行循环',
         type: 'bar',
         data: data.map(item => item.daily_fc),
-        itemStyle: { color: '#1f77b4' } // 蓝色
+        itemStyle: { color: chartColors[0] }
       },
       {
         name: '飞行航段',
         type: 'bar',
         data: data.map(item => item.daily_flight_leg),
-        itemStyle: { color: '#aec7e8' } // 浅蓝色
+        itemStyle: { color: chartColors[1] }
       },
       {
         name: '累计飞行循环',
         type: 'line',
         yAxisIndex: 1,
         data: data.map(item => item.cumulative_fc),
-        itemStyle: { color: '#ff7f0e' }, // 橙色
+        itemStyle: { color: chartColors[2] },
         smooth: false,
       },
       {
@@ -95,15 +97,18 @@ export const FlightCycleChart: FC<FlightCycleChartProps> = ({ data, onRefresh })
         type: 'line',
         yAxisIndex: 1,
         data: data.map(item => item.cumulative_flight_leg),
-        itemStyle: { color: '#ffbb78' }, // 浅橙色
+        itemStyle: { color: chartColors[3] },
         smooth: false,
       }
     ]
-  };
+  }), [data, value, chartColors]);
 
   return (
     <ErrorBoundary fallback={<div>飞行循环图表渲染失败</div>}>
       <BaseChart options={chartOptions} data={data} />
     </ErrorBoundary>
   );
-}; 
+};
+
+// 使用React.memo避免不必要的重新渲染
+export const FlightCycleChart = React.memo(FlightCycleChartComponent); 

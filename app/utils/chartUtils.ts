@@ -1,35 +1,35 @@
-/**
- * 图表通用工具函数
- */
+'use client';
 
 /**
- * 格式化日期显示
+ * 格式化日期
+ * @param dateStr ISO日期字符串
+ * @returns 格式化后的日期字符串
  */
-export const formatDate = (dateStr: string) => {
+export function formatDate(dateStr: string): string {
   if (!dateStr) return '';
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('zh-CN');
+    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
   } catch (e) {
     return dateStr;
   }
-};
+}
 
 /**
- * 安全获取对象属性值
+ * 安全获取对象属性
  */
 export const safeGetProperty = (obj: any, key: string, defaultValue: any = 0) => {
-  if (!obj) return defaultValue;
-  return obj[key] !== undefined ? obj[key] : defaultValue;
+  return obj && key in obj ? obj[key] : defaultValue;
 };
 
 /**
- * 计算数据最大值，用于设置Y轴范围
+ * 计算数据集中的最大值
  */
 export const calculateMaxValue = (data: any[], keys: string[]) => {
-  if (!data || data.length === 0) return 10;
+  if (!data || data.length === 0 || !keys || keys.length === 0) {
+    return 100; // 默认返回一个合理的最大值
+  }
   
-  // 对每个键分别计算最大值
   const maxValues: Record<string, number> = {};
   keys.forEach(key => {
     maxValues[key] = 0;
@@ -76,17 +76,21 @@ export const isMobileDevice = (width: number) => {
 };
 
 /**
- * 创建图表通用的margin配置
+ * 根据屏幕宽度和数据长度获取图表边距
  */
-export const getChartMargin = (windowWidth: number, dataLength: number) => {
-  const isMobile = isMobileDevice(windowWidth);
-  return { 
-    top: 20, 
-    right: isMobile ? 15 : 30, 
-    left: isMobile ? 10 : 20, 
-    bottom: dataLength > 10 ? 90 : 60 
+export function getChartMargin(width: number, dataLength: number) {
+  // 根据数据长度调整左右边距
+  const baseLeft = width < 768 ? 5 : 20;
+  const baseRight = width < 768 ? 15 : 30;
+  const baseBottom = dataLength > 10 ? (width < 768 ? 100 : 70) : (width < 768 ? 60 : 40);
+  
+  return {
+    top: 20,
+    right: baseRight,
+    bottom: baseBottom,
+    left: baseLeft,
   };
-};
+}
 
 /**
  * 获取X轴通用配置
@@ -123,21 +127,19 @@ export const getYAxisConfig = (windowWidth: number, keys: string[], data: any[],
 };
 
 /**
- * 获取Tooltip通用配置
+ * 获取图表的Tooltip配置
  */
-export const getTooltipConfig = (windowWidth: number) => {
-  const isMobile = isMobileDevice(windowWidth);
+export function getTooltipConfig(width: number) {
   return {
-    labelFormatter: formatDate,
-    wrapperStyle: { 
-      backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-      border: '1px solid #ddd', 
-      borderRadius: '8px', 
-      padding: '8px',
-      fontSize: isMobile ? '12px' : '14px'
-    }
+    wrapperStyle: {
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      border: '1px solid #ddd',
+      borderRadius: '8px',
+      padding: width < 768 ? '6px' : '10px',
+      fontSize: width < 768 ? '12px' : '14px',
+    },
   };
-};
+}
 
 /**
  * 获取Legend通用配置
@@ -194,30 +196,36 @@ export const getLineConfig = (windowWidth: number, dataKey: string, name: string
 };
 
 /**
- * 使用自定义Hook管理窗口尺寸
+ * 获取图表的通用主题颜色
  */
-export const useWindowSize = () => {
-  const [windowSize, setWindowSize] = useState({
-    width: getWindowWidth(),
-    height: typeof window !== 'undefined' ? window.innerHeight : 600
-  });
-  
-  useEffect(() => {
-    function handleResize() {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    }
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, []);
-  
-  return windowSize;
-};
+export function getChartColors() {
+  return [
+    '#4E79A7', // 蓝色
+    '#F28E2B', // 橙色
+    '#E15759', // 红色
+    '#76B7B2', // 青色
+    '#59A14F', // 绿色
+    '#EDC948', // 黄色
+    '#B07AA1', // 紫色
+    '#FF9DA7', // 粉色
+    '#9C755F', // 棕色
+    '#BAB0AC'  // 灰色
+  ];
+}
 
-// 需要导入的类型和hooks
-import { useState, useEffect } from 'react'; 
+/**
+ * 获取日利用率图表的渐变色
+ */
+export function getUtilizationGradient(id: string, color: string) {
+  return {
+    id,
+    x1: 0,
+    y1: 0,
+    x2: 0,
+    y2: 1,
+    colorStops: [
+      { offset: 0, color: color },
+      { offset: 1, color: `${color}33` } // 添加透明度
+    ]
+  };
+} 
