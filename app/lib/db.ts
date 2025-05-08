@@ -123,14 +123,21 @@ export async function getDailyData(dateCondition: string, formattedDate: string)
     
     // 检查是否需要过滤掉当天的数据
     const today = new Date();
+    console.log(`DB: 原始服务器时间: ${today.toISOString()}, 小时: ${today.getHours()}`);
+    
+    // 获取中国时区的时间
+    const options = { timeZone: 'Asia/Shanghai' };
+    const chinaTime = new Date(today.toLocaleString('en-US', options));
+    console.log(`DB: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
+    
     // 获取年月日
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    const year = chinaTime.getFullYear();
+    const month = String(chinaTime.getMonth() + 1).padStart(2, '0');
+    const day = String(chinaTime.getDate()).padStart(2, '0');
     // 格式化为YYYY/MM/DD
     const todayFormatted = `${year}/${month}/${day}`;
     
-    const currentHour = today.getHours();
+    const currentHour = chinaTime.getHours();
     const shouldIncludeToday = currentHour >= 21;
     
     console.log(`数据过滤: 当前日期=${todayFormatted}, 当前小时=${currentHour}, 应包含今天数据=${shouldIncludeToday}`);
@@ -190,14 +197,21 @@ export async function getCumulativeData(dateCondition: string, formattedDate: st
     
     // 检查是否需要过滤掉当天的数据
     const today = new Date();
+    console.log(`累计DB: 原始服务器时间: ${today.toISOString()}, 小时: ${today.getHours()}`);
+    
+    // 获取中国时区的时间
+    const options = { timeZone: 'Asia/Shanghai' };
+    const chinaTime = new Date(today.toLocaleString('en-US', options));
+    console.log(`累计DB: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
+    
     // 获取年月日
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    const year = chinaTime.getFullYear();
+    const month = String(chinaTime.getMonth() + 1).padStart(2, '0');
+    const day = String(chinaTime.getDate()).padStart(2, '0');
     // 格式化为YYYY/MM/DD
     const todayFormatted = `${year}/${month}/${day}`;
     
-    const currentHour = today.getHours();
+    const currentHour = chinaTime.getHours();
     const shouldIncludeToday = currentHour >= 21;
     
     console.log(`累计数据过滤: 当前日期=${todayFormatted}, 当前小时=${currentHour}, 应包含今天数据=${shouldIncludeToday}`);

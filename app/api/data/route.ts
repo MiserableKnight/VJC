@@ -31,7 +31,14 @@ export async function GET(request: NextRequest) {
 
     // 获取当前日期格式化为字符串 (YYYY-MM-DD)
     const today = new Date();
-    const formattedToday = today.toISOString().split('T')[0];
+    console.log(`API: 原始服务器时间: ${today.toISOString()}, 小时: ${today.getHours()}`);
+    
+    // 获取中国时区的时间
+    const options = { timeZone: 'Asia/Shanghai' };
+    const chinaTime = new Date(today.toLocaleString('en-US', options));
+    console.log(`API: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
+    
+    const formattedToday = chinaTime.toISOString().split('T')[0];
     console.log('今天日期格式化前:', formattedToday);
     
     // 转换为YYYY/MM/DD格式，与数据库格式保持一致
@@ -39,7 +46,7 @@ export async function GET(request: NextRequest) {
     console.log('今天日期格式化后(数据库格式):', formattedTodayForDb);
 
     // 判断是否已经超过当天21:00
-    const currentHour = today.getHours();
+    const currentHour = chinaTime.getHours();
     const shouldIncludeToday = currentHour >= 21;
     console.log(`当前小时: ${currentHour}, 是否包含今天数据: ${shouldIncludeToday}`);
 

@@ -121,10 +121,19 @@ export class ChartDataResolver {
   async chartData(): Promise<ChartDataResponse> { // 方法名修改为chartData，与Query名称一致
     console.log('GraphQL: 开始查询数据库');
     
+    // 创建日期对象并明确设置为中国时区
     const today = new Date();
-    const formattedTodayForDb = today.toISOString().split('T')[0].replace(/-/g, '/');
-    const currentHour = today.getHours();
+    console.log(`GraphQL: 原始服务器时间: ${today.toISOString()}, 小时: ${today.getHours()}`);
+    
+    // 获取中国时区的时间
+    const options = { timeZone: 'Asia/Shanghai' };
+    const chinaTime = new Date(today.toLocaleString('en-US', options));
+    console.log(`GraphQL: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
+    
+    const formattedTodayForDb = chinaTime.toISOString().split('T')[0].replace(/-/g, '/');
+    const currentHour = chinaTime.getHours();
     const shouldIncludeToday = currentHour >= 21;
+    console.log(`GraphQL: 当前中国时区小时: ${currentHour}, 包含今天数据: ${shouldIncludeToday}`);
     const dateCondition = shouldIncludeToday ? '<=' : '<';
 
     // 使用数据库访问层获取数据
