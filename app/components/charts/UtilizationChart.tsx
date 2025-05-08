@@ -33,7 +33,7 @@ const UtilizationChartComponent: FC<UtilizationChartProps> = ({ data, onRefresh 
       valueFormatter: (value: any) => (typeof value === 'number' ? value.toFixed(2) + ' 小时/天' : value)
     },
     legend: {
-      data: ['飞行小时利用率', '轮挡小时利用率'],
+      data: ['飞行小时利用率', '轮挡小时利用率', '平均飞行小时利用率', '平均轮挡小时利用率'],
       top: 'bottom',
       textStyle: { fontSize: value({ xs: 10, md: 12, base: 12 }) }
     },
@@ -67,19 +67,35 @@ const UtilizationChartComponent: FC<UtilizationChartProps> = ({ data, onRefresh 
     series: [
       {
         name: '飞行小时利用率',
-        type: 'line',
+        type: 'bar',
+        barWidth: '25%',
         data: data.map(item => item.daily_utilization_air_time),
         itemStyle: { color: chartColors[4] }, // 使用绿色
-        smooth: false,
-        areaStyle: { opacity: 0.3 }
       },
       {
         name: '轮挡小时利用率',
-        type: 'line',
+        type: 'bar',
+        barWidth: '25%',
         data: data.map(item => item.daily_utilization_block_time),
         itemStyle: { color: chartColors[1] }, // 使用橙色
+      },
+      {
+        name: '平均飞行小时利用率',
+        type: 'line',
+        data: data.map(item => item.cumulative_daily_utilization_air_time),
+        itemStyle: { color: chartColors[0] }, // 使用蓝色
         smooth: false,
-        areaStyle: { opacity: 0.3 }
+        symbolSize: 5,
+        lineStyle: { width: 2 }
+      },
+      {
+        name: '平均轮挡小时利用率',
+        type: 'line',
+        data: data.map(item => item.cumulative_daily_utilization_block_time),
+        itemStyle: { color: chartColors[2] }, // 使用红色
+        smooth: false,
+        symbolSize: 5,
+        lineStyle: { width: 2 }
       }
     ]
   }), [data, value, chartColors]);
