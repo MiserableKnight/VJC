@@ -35,17 +35,24 @@ export function useChartPerformance(
   data?: ChartDataItemGQL[],
   seriesCount = 1
 ): UseChartPerformanceResult {
-  // 使用useRef而不是useState来存储开始时间，避免触发重新渲染
-  const renderStartTimeRef = useRef<number | null>(null);
+  // 使用ref存储所有状态和性能数据，避免不必要的重渲染
+  const stateRef = useRef({
+    renderStartTime: null as number | null,
+    performanceStats: null as ChartPerformanceStats | null,
+    hasPerformanceIssue: false,
+    dataPointCount: 0
+  });
+  
+  // 仅在UI需要更新时使用state
   const [performanceStats, setPerformanceStats] = useState<ChartPerformanceStats | null>(null);
-
-  // 使用useMemo计算数据点数量，避免重复计算
-  const dataPointCount = useMemo(() => {
-    if (!data) return 0;
-    return data.length * seriesCount;
+  
+  // 计算数据点数量并存储在ref中
+  useEffect(() => {
+    const dataPointCount = data ? data.length * seriesCount : 0;
+    stateRef.current.dataPointCount = dataPointCount;
   }, [data, seriesCount]);
-
-  // 使用useMemo判断是否存在性能问题
+  
+  // 判断是否存在性能问题
   const isPerformanceIssue = useMemo(() => {
     if (!performanceStats) return false;
     
@@ -61,12 +68,12 @@ export function useChartPerformance(
     return false;
   }, [performanceStats]);
 
-  // 开始渲染计时 - 使用useCallback避免函数重新创建
+  // 开始渲染计时 - 使用空依赖数组仅创建一次函数实例
   const startRender = useCallback(() => {
     try {
       // 只有在尚未开始计时时才设置开始时间
-      if (renderStartTimeRef.current === null) {
-        renderStartTimeRef.current = performance.now();
+      if (stateRef.current.renderStartTime === null) {
+        stateRef.current.renderStartTime = performance.now();
       }
     } catch (error) {
       // 使用图表错误日志记录性能问题
@@ -78,13 +85,14 @@ export function useChartPerformance(
     }
   }, [chartId]);
 
-  // 结束渲染计时并收集性能数据 - 使用useCallback避免函数重新创建
+  // 结束渲染计时并收集性能数据 - 使用空依赖数组仅创建一次函数实例
   const endRender = useCallback(() => {
     try {
-      if (renderStartTimeRef.current === null) return;
+      if (stateRef.current.renderStartTime === null) return;
       
       const endTime = performance.now();
-      const renderTime = endTime - renderStartTimeRef.current;
+      const renderTime = endTime - stateRef.current.renderStartTime;
+      const dataPointCount = stateRef.current.dataPointCount;
       
       // 尝试获取内存使用情况（仅在支持的浏览器中工作）
       let memoryUsage;
@@ -92,23 +100,28 @@ export function useChartPerformance(
         memoryUsage = (performance as any).memory.usedJSHeapSize / (1024 * 1024); // MB
       }
       
-      // 更新性能统计
-      setPerformanceStats({
+      // 创建性能统计对象
+      const stats: ChartPerformanceStats = {
         renderTime,
         dataPointCount,
         seriesCount,
         memoryUsage,
-      });
+      };
       
-      // 重置开始时间，准备下次渲染测量
-      renderStartTimeRef.current = null;
+      // 更新ref和state
+      stateRef.current.performanceStats = stats;
+      stateRef.current.renderStartTime = null;
+      setPerformanceStats(stats);
+      
+      // 判断性能问题
+      const hasIssue = renderTime > 500 || (dataPointCount > 1000 && renderTime > 200);
+      stateRef.current.hasPerformanceIssue = hasIssue;
       
       // 性能问题日志记录
-      if (
-        renderTime > 500 || 
-        (dataPointCount > 1000 && renderTime > 200)
-      ) {
-        console.warn(`Chart performance issue detected for ${chartId}: ${renderTime.toFixed(2)}ms, ${dataPointCount} data points`);
+      if (hasIssue) {
+        console.warn(
+          `图表性能问题: ${chartId} - 渲染时间 ${renderTime.toFixed(2)}ms, ${dataPointCount} 数据点`
+        );
       }
     } catch (error) {
       // 使用图表错误日志记录性能问题
@@ -117,18 +130,21 @@ export function useChartPerformance(
         `performance-${chartId}`, 
         { 
           action: 'endRender',
-          dataPoints: dataPointCount
+          dataPoints: stateRef.current.dataPointCount
         }
       );
     }
-  }, [chartId, dataPointCount, seriesCount]);
+  }, [chartId, seriesCount]);
 
   // 清理函数
   useEffect(() => {
     return () => {
-      // 组件卸载时清理状态
-      renderStartTimeRef.current = null;
-      setPerformanceStats(null);
+      stateRef.current = {
+        renderStartTime: null,
+        performanceStats: null,
+        hasPerformanceIssue: false,
+        dataPointCount: 0
+      };
     };
   }, []);
 

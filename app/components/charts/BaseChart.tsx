@@ -153,7 +153,7 @@ export const BaseChart: FC<BaseChartProps> = ({
   const yAxisConfig = value(defaultYAxisConfig);
   const tooltipConfig = value(defaultTooltipConfig);
   const legendConfig = value(defaultLegendConfig);
-  const interval = calculateChartInterval(data.length, breakpoint);
+  const interval = calculateChartInterval(data.length, breakpoint as "2xl" | "xl" | "lg" | "md" | "sm" | "xs");
   
   return (
     <div className={`${height} w-full overflow-x-auto`}>

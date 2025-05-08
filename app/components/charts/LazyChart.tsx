@@ -40,58 +40,69 @@ const LazyChartComponent: FC<LazyChartProps> = ({
   className = '',
   id = 'unknown-chart'
 }) => {
+  // 使用ref存储可见性和渲染状态，避免频繁重渲染
+  const stateRef = useRef({
+    isVisible: false,
+    shouldRender: false,
+    isLoaded: false,
+    perfStarted: false,
+    perfEnded: false
+  });
+  
+  // 仅使用useState存储UI需要更新的状态
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // 观察元素可见性
   const [ref, isVisible] = useIntersectionObserver<HTMLDivElement>(
     { threshold, rootMargin },
     false
   );
   
-  // 用于处理动画效果
-  const [shouldRender, setShouldRender] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  // 使用ref跟踪性能监控状态
-  const perfStarted = useRef(false);
-  const perfEnded = useRef(false);
-
-  // 使用性能监控钩子
+  // 性能监控
   const { startRender, endRender } = useChartPerformance(id, [], 1);
   
-  // 当组件进入视口时启动渲染
+  // 当可见性变化时，更新渲染状态
   useEffect(() => {
-    if (isVisible && !shouldRender) {
-      // 开始性能监控
-      if (!perfStarted.current) {
-        perfStarted.current = true;
+    if (isVisible && !stateRef.current.shouldRender) {
+      // 记录当前可见
+      stateRef.current.isVisible = true;
+      stateRef.current.shouldRender = true;
+      
+      // 开始性能监控 (仅首次)
+      if (!stateRef.current.perfStarted) {
+        stateRef.current.perfStarted = true;
         startRender();
       }
       
-      // 立即开始渲染组件
-      setShouldRender(true);
-    }
-  }, [isVisible, shouldRender, startRender]);
-  
-  // 当组件开始渲染后，稍后标记为已加载
-  useEffect(() => {
-    if (shouldRender && !isLoaded) {
-      const loadingTimeout = setTimeout(() => {
-        setIsLoaded(true);
-        
-        // 记录渲染完成
-        if (!perfEnded.current) {
-          perfEnded.current = true;
-          endRender();
+      // 在渲染后安排加载状态更新
+      const loadTimeout = setTimeout(() => {
+        // 只有当组件仍然挂载并且尚未加载时更新状态
+        if (!stateRef.current.isLoaded) {
+          stateRef.current.isLoaded = true;
+          setIsLoaded(true);
+          
+          // 结束性能监控 (仅首次)
+          if (!stateRef.current.perfEnded) {
+            stateRef.current.perfEnded = true;
+            endRender();
+          }
         }
       }, 300);
       
-      return () => clearTimeout(loadingTimeout);
+      return () => clearTimeout(loadTimeout);
     }
-  }, [shouldRender, isLoaded, endRender]);
-
+  }, [isVisible, startRender, endRender]);
+  
   // 组件卸载时清理
   useEffect(() => {
     return () => {
-      perfStarted.current = false;
-      perfEnded.current = false;
+      stateRef.current = {
+        isVisible: false,
+        shouldRender: false,
+        isLoaded: false,
+        perfStarted: false,
+        perfEnded: false
+      };
     };
   }, []);
 
@@ -117,7 +128,7 @@ const LazyChartComponent: FC<LazyChartProps> = ({
       )}
       
       {/* 实际图表内容 */}
-      {shouldRender && (
+      {stateRef.current.shouldRender && (
         <Suspense fallback={skeletonContent}>
           <div className={contentClass}>
             {children}

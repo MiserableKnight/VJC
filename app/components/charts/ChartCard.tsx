@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, ReactNode } from 'react';
+import { FC, ReactNode, memo } from 'react';
 
 /**
  * 图表卡片组件
@@ -12,7 +12,7 @@ interface ChartCardProps {
   children: ReactNode;
 }
 
-export const ChartCard: FC<ChartCardProps> = ({ title, onRefresh, children }) => {
+const ChartCardComponent: FC<ChartCardProps> = ({ title, onRefresh, children }) => {
   return (
     <div className="bg-white p-1 sm:p-6 rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-1 sm:mb-6">
@@ -29,4 +29,7 @@ export const ChartCard: FC<ChartCardProps> = ({ title, onRefresh, children }) =>
       {children}
     </div>
   );
-}; 
+};
+
+// 使用memo包装组件，只有当props变化时才重新渲染
+export const ChartCard = memo(ChartCardComponent); 

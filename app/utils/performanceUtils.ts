@@ -7,6 +7,49 @@ interface LayoutShift extends PerformanceEntry {
 }
 
 /**
+ * 资源加载性能条目类型
+ */
+interface ResourcePerformanceEntry extends Omit<PerformanceResourceTiming, 'nextHopProtocol'> {
+  name: string;
+  entryType: string;
+  startTime: number;
+  duration: number;
+  initiatorType: string;
+  nextHopProtocol?: string;
+}
+
+/**
+ * 资源性能信息接口
+ */
+interface ResourcePerformanceInfo {
+  url: string;
+  duration: number;
+  type: string;
+  initiatorType: string;
+}
+
+/**
+ * 慢资源信息接口
+ */
+interface SlowestResourceInfo {
+  url: string;
+  loadTime: number;
+  type: string;
+}
+
+/**
+ * 资源分析结果类型
+ */
+interface ResourceAnalysis {
+  totalResources: number;
+  totalLoadTime: number;
+  avgLoadTime: number;
+  slowestResource?: SlowestResourceInfo;
+  resourcesByType: Record<string, { count: number; totalTime: number }>;
+  error?: string;
+}
+
+/**
  * 计算页面首次内容绘制 (FCP) 指标
  * @returns Promise<number> FCP时间（毫秒）
  */
@@ -241,55 +284,82 @@ export function getBrowserInfo() {
  * 分析资源加载性能
  * @returns 资源加载性能分析结果
  */
-export function analyzeResourcePerformance() {
+export function analyzeResourcePerformance(): ResourceAnalysis {
   if (!window.performance || !window.performance.getEntriesByType) {
-    return { error: '当前浏览器不支持Performance API' };
+    return { 
+      totalResources: 0, 
+      totalLoadTime: 0, 
+      avgLoadTime: 0, 
+      resourcesByType: {},
+      error: '当前浏览器不支持Performance API' 
+    };
   }
   
-  // 显式类型断言，解决TypeScript接口不完整的问题
-  const resources = Array.from(window.performance.getEntriesByType('resource'))
-    .filter(entry => entry instanceof PerformanceResourceTiming) as PerformanceResourceTiming[];
+  // 获取资源性能条目并转换为简单对象
+  const resourceEntries = window.performance.getEntriesByType('resource');
+  const resources: ResourcePerformanceInfo[] = [];
+  
+  // 安全地将性能条目转换为我们自己定义的类型
+  for (let i = 0; i < resourceEntries.length; i++) {
+    const entry = resourceEntries[i];
+    resources.push({
+      url: entry.name,
+      duration: entry.duration,
+      type: getResourceType(entry.name),
+      initiatorType: 'initiatorType' in entry ? (entry as any).initiatorType : 'unknown'
+    });
+  }
+  
+  // 如果没有资源，返回空结果
+  if (resources.length === 0) {
+    return {
+      totalResources: 0,
+      totalLoadTime: 0,
+      avgLoadTime: 0,
+      resourcesByType: {}
+    };
+  }
   
   // 按资源类型分类
-  const resourcesByType: Record<string, PerformanceResourceTiming[]> = {};
-  resources.forEach(resource => {
-    const type = getResourceType(resource.name);
-    if (!resourcesByType[type]) {
-      resourcesByType[type] = [];
-    }
-    resourcesByType[type].push(resource);
-  });
-  
-  // 计算每种类型的平均加载时间
-  const averageLoadTimes: Record<string, number> = {};
-  for (const [type, typeResources] of Object.entries(resourcesByType)) {
-    const totalTime = typeResources.reduce((sum, resource) => {
-      return sum + (resource.responseEnd - resource.startTime);
-    }, 0);
-    averageLoadTimes[type] = totalTime / typeResources.length;
-  }
-  
-  // 找出加载最慢的资源
-  let slowestResource: PerformanceResourceTiming | null = null;
+  const resourcesByType: Record<string, { count: number; totalTime: number }> = {};
+  let totalLoadTime = 0;
+  let slowestResource: ResourcePerformanceInfo | undefined;
   let maxLoadTime = 0;
   
+  // 处理每个资源
   resources.forEach(resource => {
-    const loadTime = resource.responseEnd - resource.startTime;
-    if (loadTime > maxLoadTime) {
-      maxLoadTime = loadTime;
+    // 更新资源类型统计
+    const type = resource.type;
+    if (!resourcesByType[type]) {
+      resourcesByType[type] = { count: 0, totalTime: 0 };
+    }
+    resourcesByType[type].count++;
+    resourcesByType[type].totalTime += resource.duration;
+    
+    // 更新总加载时间
+    totalLoadTime += resource.duration;
+    
+    // 检查是否是最慢的资源
+    if (resource.duration > maxLoadTime) {
+      maxLoadTime = resource.duration;
       slowestResource = resource;
     }
   });
   
+  // 计算平均加载时间
+  const avgLoadTime = totalLoadTime / resources.length;
+  
+  // 构建最终结果
   return {
     totalResources: resources.length,
+    totalLoadTime,
+    avgLoadTime,
     resourcesByType,
-    averageLoadTimes,
     slowestResource: slowestResource ? {
-      url: (slowestResource as PerformanceResourceTiming).name,
-      type: getResourceType((slowestResource as PerformanceResourceTiming).name),
-      loadTime: maxLoadTime
-    } : null
+      url: slowestResource.url,
+      type: slowestResource.type,
+      loadTime: slowestResource.duration
+    } : undefined
   };
 }
 
