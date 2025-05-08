@@ -1,22 +1,9 @@
 import 'reflect-metadata';
 import { ObjectType, Field, ID, Float, Int, buildSchemaSync, Query, Resolver } from 'type-graphql';
-import { Pool } from 'pg';
-import { DbConfig, getDbConfig } from '../lib/dbConfig'; // 假设dbConfig已移至单独文件
+import db, { DbConfig, getDbConfig } from '../lib/db';
 
 // 数据库配置
 const dbConfig: DbConfig = getDbConfig();
-
-// 创建连接池实例
-const pool = new Pool({
-  host: dbConfig.host,
-  port: dbConfig.port,
-  database: dbConfig.database,
-  user: dbConfig.user,
-  password: dbConfig.password,
-  ssl: {
-    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
-  }
-});
 
 @ObjectType({ description: "图表数据项" })
 export class ChartDataItem {
@@ -133,29 +120,23 @@ export class ChartDataResolver {
   @Query(() => ChartDataResponse, { description: "获取图表所需的所有数据" })
   async chartData(): Promise<ChartDataResponse> { // 方法名修改为chartData，与Query名称一致
     console.log('GraphQL: 开始查询数据库');
+    
     const today = new Date();
     const formattedTodayForDb = today.toISOString().split('T')[0].replace(/-/g, '/');
     const currentHour = today.getHours();
     const shouldIncludeToday = currentHour >= 21;
     const dateCondition = shouldIncludeToday ? '<=' : '<';
 
-    const dailyQuery = `
-      SELECT date, air_time, block_time, fc, flight_leg, daily_utilization_air_time, daily_utilization_block_time
-      FROM "${schemaName}"."${tableName}"
-      WHERE "date" ${dateCondition} $1
-      ORDER BY "date"
-    `;
-    const dailyResult = await pool.query(dailyQuery, [formattedTodayForDb]);
-
-    const cumulativeQuery = `
-      SELECT date, cumulative_air_time, cumulative_block_time, cumulative_fc, cumulative_flight_leg, cumulative_daily_utilization_air_time, cumulative_daily_utilization_blcok_time AS cumulative_daily_utilization_block_time
-      FROM "${schemaName}"."${tableName}"
-      WHERE "date" ${dateCondition} $1
-      ORDER BY "date"
-    `;
-    const cumulativeResult = await pool.query(cumulativeQuery, [formattedTodayForDb]);
+    // 使用数据库访问层获取数据
+    const dailyResult = { rows: await db.getDailyData(dateCondition, formattedTodayForDb) };
+    const cumulativeResult = { rows: await db.getCumulativeData(dateCondition, formattedTodayForDb) };
     
     console.log('GraphQL: 数据库查询完成');
+    // 打印最后一个数据点的日期，用于调试
+    if (dailyResult.rows.length > 0) {
+      const lastDataPoint = dailyResult.rows[dailyResult.rows.length - 1];
+      console.log(`GraphQL: 最后一个数据点日期: ${lastDataPoint.date}`);
+    }
 
     const dataMap: Record<string, Partial<ChartDataItem>> = {};
 
@@ -194,7 +175,7 @@ export class ChartDataResolver {
 
     return {
       combinedData,
-      isLatestDay: shouldIncludeToday, // 或者根据实际逻辑判断
+      isLatestDay: shouldIncludeToday,
       latestDate,
     };
   }

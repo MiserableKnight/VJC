@@ -265,6 +265,186 @@ const ChartSkeleton: FC<{className?: string}> = ({className = ''}) => (
    - 改进响应式设计，优化移动设备体验
    - 实现移动设备特定的性能优化
 
+## 最新优化更新 (2024年)
+
+### 11. API路由优化
+
+我们对API路由进行了全面优化，主要包括：
+
+#### 11.1 拼写错误修复
+
+- 修复了`cumulative_daily_utilization_blcok_time`拼写错误，正确命名为`cumulative_daily_utilization_block_time`
+- 更新了所有使用此字段的SQL查询和GraphQL解析器
+
+#### 11.2 API请求验证增强
+
+- 增加了基于API密钥的身份验证机制
+- 实现了请求头部验证，提高了API端点的安全性
+```typescript
+// app/api/data/route.ts 示例
+export async function GET(request: NextRequest) {
+  // 验证请求
+  const authHeader = request.headers.get('authorization');
+  const apiKey = process.env.API_KEY;
+  
+  if (apiKey && (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== apiKey)) {
+    return NextResponse.json(
+      { error: '未授权访问' },
+      { status: 401 }
+    );
+  }
+  // ...接下来的处理逻辑
+}
+```
+
+#### 11.3 数据库访问层优化
+
+- 创建了独立的数据库访问层(`app/lib/db.ts`)，实现数据库操作的模块化
+- 统一了错误处理和连接管理
+- 提供了类型安全的数据库访问接口
+```typescript
+// 数据库访问层示例
+export async function getDailyData(dateCondition: string, formattedDate: string): Promise<any[]> {
+  const config = getDbConfig();
+  const schemaName = config.schema;
+  const tableName = config.table_name;
+  
+  const query = `
+    SELECT 
+      "date",
+      "air_time",
+      "block_time",
+      "fc",
+      "flight_leg",
+      "daily_utilization_air_time",
+      "daily_utilization_block_time"
+    FROM "${schemaName}"."${tableName}"
+    WHERE "date" ${dateCondition} $1
+    ORDER BY "date"
+  `;
+  
+  try {
+    const result = await pool.query(query, [formattedDate]);
+    return result.rows;
+  } catch (error) {
+    console.error('获取每日数据失败:', error);
+    throw error;
+  }
+}
+```
+
+#### 11.4 时间逻辑优化
+
+- 实现了"21点规则"：只在当天21点之后才更新或显示当天的数据
+- 在数据库访问层添加了数据过滤，确保即使数据库中有当天数据，但在21点前也不会显示给用户
+- 更新了相关的UI提示信息，增强用户体验
+
+```typescript
+// 数据库访问层示例 - 21点前过滤当天数据
+export async function getDailyData(dateCondition: string, formattedDate: string): Promise<any[]> {
+  // ... 数据库查询代码 ...
+  
+  try {
+    const result = await pool.query(query, [formattedDate]);
+    
+    // 检查是否需要过滤掉当天的数据
+    const today = new Date();
+    const todayFormatted = today.toISOString().split('T')[0].replace(/-/g, '/');
+    const currentHour = today.getHours();
+    const shouldIncludeToday = currentHour >= 21;
+    
+    // 如果不到21点，过滤掉当天的数据
+    if (!shouldIncludeToday) {
+      return result.rows.filter(row => row.date !== todayFormatted);
+    }
+    
+    return result.rows;
+  } catch (error) {
+    // ... 错误处理 ...
+  }
+}
+```
+
+### 12. 配置优化与错误修复
+
+#### 12.1 Next.js配置优化
+
+- 创建了标准的`next.config.js`配置文件，替换了TypeScript版本
+- 禁用了会引起问题的遥测和跟踪功能
+- 优化了字体加载配置
+```javascript
+// next.config.js 示例
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  /* config options here */
+  env: {
+    APP_ENV: process.env.NODE_ENV || 'development'
+  },
+  // 配置字体加载
+  optimizeFonts: false,
+  // 禁用遥测和跟踪
+  telemetry: { 
+    disabled: true 
+  },
+  // 禁用一些实验性功能的跟踪
+  experimental: {
+    webVitalsAttribution: []
+  }
+};
+```
+
+#### 12.2 字体加载优化
+
+- 解决了Google字体下载失败的问题
+- 优化为使用系统默认字体，提高了页面加载性能和可靠性
+- 创建了自定义字体类和CSS变量，保持了样式一致性
+```css
+/* 自定义字体类 */
+.system-font {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+.mono-font {
+  font-family: Menlo, Monaco, "Lucida Console", "Liberation Mono", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Courier New", monospace;
+}
+```
+
+#### 12.3 权限错误修复
+
+- 解决了Next.js跟踪功能导致的`EPERM: operation not permitted`错误
+- 优化了构建和开发环境配置，减少类似错误发生的可能
+
+## 优化效果
+
+这些最新的优化带来了以下效果：
+
+1. **安全性提升**
+   - API端点现在有基本的身份验证保护
+   - 减少了潜在的SQL注入风险
+
+2. **可维护性增强**
+   - 数据库访问逻辑模块化，提高了代码可维护性
+   - 优化了错误处理和日志记录
+
+3. **性能改进**
+   - 减少了字体文件下载，提高了页面加载速度
+   - 优化了数据库查询
+
+4. **开发体验提升**
+   - 解决了令人困扰的错误消息
+   - 简化了配置管理
+
+## 下一步计划
+
+1. **测试覆盖**
+   - 添加单元测试和集成测试提高代码可靠性
+   - 为主要组件添加story文件用于UI开发和测试
+
+2. **进一步性能优化**
+   - 实现数据缓存策略
+   - 添加真实的ORM支持
+   - 考虑实现数据预取和流式渲染
+
 ## 总结
 
 通过组件拆分、懒加载实现、状态管理优化和性能监控体系的建立，我们显著提升了飞行运营数据可视化平台的性能和用户体验。这些优化不仅改善了当前应用的表现，还为未来的扩展和维护奠定了坚实的基础。 
