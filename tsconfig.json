@@ -1,29 +1,17 @@
 {
+  "extends": "./config/tsconfig/nextjs.json",
+  "include": [
+    "config/tsconfig/../../next-env.d.ts",
+    "config/tsconfig/../../**/*.ts",
+    "config/tsconfig/../../**/*.tsx",
+    "config/tsconfig/../../.next/types/**/*.ts",
+    ".next/types/**/*.ts"
+  ],
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": ["./*"]
-    }
-  },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+    ]
+  }
 }

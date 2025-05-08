@@ -19,32 +19,51 @@
 ## 项目结构
 
 ```
-app/
-├── api/
-│   └── logs/
-│       └── error/
-│           └── route.ts       # 错误日志API
-├── components/
-│   ├── ErrorBoundary.tsx      # 错误边界组件
-│   └── charts/
-│       ├── AirTimeChart.tsx   # 空时数据图表
-│       ├── BaseChart.tsx      # 基础图表组件
-│       ├── ChartCard.tsx      # 图表卡片组件
-│       ├── ChartsContainer.tsx # 图表容器（数据获取）
-│       ├── FlightCycleChart.tsx # 飞行循环图表
-│       ├── LazyChart.tsx      # 懒加载图表包装器
-│       └── UtilizationChart.tsx # 日利用率图表
-├── hooks/
-│   ├── useIntersectionObserver.ts # 懒加载Hook
-│   └── useResponsive.ts     # 响应式设计Hook
-├── utils/
-│   ├── chartUtils.ts        # 图表工具函数
-│   ├── errorLogger.ts       # 错误日志工具
-│   └── responsiveChartConfig.ts # 响应式图表配置
-├── data/                     # 数据相关服务
-├── globals.css              # 全局样式
-├── layout.tsx               # 布局组件
-├── page.tsx                 # 主页面
+/
+├── app/
+│   ├── api/                # API 端点
+│   │   └── logs/
+│   │       └── error/
+│   │           └── route.ts # 错误日志API
+│   ├── components/         # UI组件
+│   │   ├── ErrorBoundary.tsx
+│   │   └── charts/
+│   │       ├── AirTimeChart.tsx
+│   │       ├── BaseChart.tsx
+│   │       ├── ChartCard.tsx
+│   │       ├── ChartsContainer.tsx
+│   │       ├── FlightCycleChart.tsx
+│   │       ├── LazyChart.tsx
+│   │       └── UtilizationChart.tsx
+│   ├── hooks/              # 自定义Hooks
+│   │   ├── useIntersectionObserver.ts
+│   │   └── useResponsive.ts
+│   ├── utils/              # 工具函数
+│   │   ├── chartUtils.ts
+│   │   ├── errorLogger.ts
+│   │   └── responsiveChartConfig.ts
+│   ├── data/               # 数据服务
+│   ├── globals.css         # 全局样式
+│   ├── layout.tsx          # 布局组件
+│   └── page.tsx            # 主页面
+│
+├── config/                 # 配置文件目录
+│   ├── next/               # Next.js配置
+│   │   └── next.config.js
+│   ├── postcss/            # PostCSS配置
+│   │   └── postcss.config.mjs
+│   └── tsconfig/           # TypeScript配置
+│       ├── base.json
+│       └── nextjs.json
+│
+├── docs/                   # 项目文档
+│   ├── OPTIMIZATION.md     # 优化详细记录
+│   └── 优化建议.md
+│
+├── public/                 # 静态资源
+├── next.config.js          # Next.js配置引用
+├── package.json            # 项目依赖
+└── tsconfig.json           # TypeScript配置引用
 ```
 
 ## 使用说明
@@ -69,4 +88,5 @@ app/
    ```
 
 ## 项目文档
-- [优化记录](./OPTIMIZATION.md) - 项目优化详细记录 
+- [优化记录](./docs/OPTIMIZATION.md) - 项目优化详细记录
+- [优化建议](./docs/优化建议.md) - 项目优化建议 
