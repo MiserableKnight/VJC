@@ -286,8 +286,8 @@ export function analyzeResourcePerformance() {
     resourcesByType,
     averageLoadTimes,
     slowestResource: slowestResource ? {
-      url: slowestResource.name,
-      type: getResourceType(slowestResource.name),
+      url: (slowestResource as PerformanceResourceTiming).name,
+      type: getResourceType((slowestResource as PerformanceResourceTiming).name),
       loadTime: maxLoadTime
     } : null
   };
