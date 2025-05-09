@@ -49,6 +49,15 @@ export function WeatherStations() {
   
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+      {/* 调试信息区域 - 仅在开发环境显示 */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
+          <p>屏幕宽度: {width}px</p>
+          <p>是否为移动视图: {isMobileView ? '是' : '否'}</p>
+          <p>单列布局: {isMobileView ? '启用' : '禁用'}</p>
+        </div>
+      )}
+      
       {/* 使用内联条件判断替代响应式类 */}
       <div className={`grid ${isMobileView ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-6`}>
         {weatherStations.map((station) => (
