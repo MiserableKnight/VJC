@@ -7,11 +7,11 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function Home() {
   const modules = [
+    { name: '飞机运行状态', path: '/aircraft-operational-status', icon: '✈️' },
+    { name: '天气状况', path: '/weather-conditions', icon: '🌤️' },
     { name: '运行指标', path: '/operational-metrics', icon: '📊' },
     { name: '飞机技术状态', path: '/aircraft-technical-status', icon: '🔧' },
-    { name: '飞机运行状态', path: '/aircraft-operational-status', icon: '✈️' },
     { name: '经济性数据', path: '/economic-data', icon: '💹' },
-    { name: '天气状况', path: '/weather-conditions', icon: '🌤️' },
   ];
 
   return (
@@ -34,17 +34,16 @@ export default function Home() {
           <div className="max-w-7xl mx-auto">
             <h1 className="text-3xl sm:text-4xl font-bold text-center my-6 sm:my-10 text-gray-800">越捷湿租项目运营数据看板</h1>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6 mt-8">
               {modules.map((module) => (
                 <Link 
                   key={module.path} 
                   href={module.path}
-                  className="bg-white hover:bg-blue-50 border border-gray-200 rounded-xl p-6 shadow-sm transition-all hover:shadow-md"
+                  className="bg-white hover:bg-blue-50 border border-gray-200 rounded-lg shadow-sm transition-all hover:shadow-md flex items-center justify-center h-44 sm:h-52"
                 >
-                  <div className="flex flex-col items-center text-center">
-                    <div className="text-4xl mb-4">{module.icon}</div>
-                    <h2 className="text-xl font-semibold text-gray-800">{module.name}</h2>
-                    <p className="mt-2 text-gray-600">点击查看详细数据</p>
+                  <div className="flex flex-col items-center text-center p-4 sm:p-5 w-full">
+                    <div className="text-5xl sm:text-6xl mb-4 sm:mb-6">{module.icon}</div>
+                    <h2 className="text-lg sm:text-2xl font-semibold text-gray-800 px-2">{module.name}</h2>
                   </div>
                 </Link>
               ))}

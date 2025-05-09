@@ -14,13 +14,13 @@ interface ChartCardProps {
 
 const ChartCardComponent: FC<ChartCardProps> = ({ title, onRefresh, children }) => {
   return (
-    <div className="bg-white p-1 sm:p-6 rounded-lg shadow-md">
-      <div className="flex justify-between items-center mb-1 sm:mb-6">
-        <h2 className="text-base sm:text-xl font-semibold text-gray-800">{title}</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800">{title}</h2>
         {onRefresh && (
           <button 
             onClick={onRefresh}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium py-0.5 px-2 sm:px-3 rounded-full"
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm sm:text-sm font-medium py-1 px-3 sm:px-3 rounded-full"
           >
             刷新
           </button>
