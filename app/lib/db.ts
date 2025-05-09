@@ -1,4 +1,12 @@
 import { Pool, PoolClient } from 'pg';
+import { 
+  getChinaTime, 
+  formatDateSlash, 
+  normalizeDate, 
+  shouldShowTodayData, 
+  getTodayFormatted,
+  isToday 
+} from '../utils/dateUtils';
 
 // 数据库配置类型定义
 export interface DbConfig {
@@ -54,13 +62,7 @@ export interface FlightData {
 
 // 格式化日期，确保统一格式
 function formatDateForComparison(date: string): string {
-  // 标准化日期格式为YYYY/MM/DD
-  let formattedDate = String(date);
-  // 如果是YYYY-MM-DD格式，转换为YYYY/MM/DD
-  if (formattedDate.includes('-')) {
-    formattedDate = formattedDate.replace(/-/g, '/');
-  }
-  return formattedDate;
+  return normalizeDate(date);
 }
 
 // 获取日期数据进行调试
@@ -121,38 +123,29 @@ export async function getDailyData(dateCondition: string, formattedDate: string)
     console.log('原始每日数据日期信息:');
     logDateInfo(result.rows);
     
-    // 检查是否需要过滤掉当天的数据
-    const today = new Date();
-    console.log(`DB: 原始服务器时间: ${today.toISOString()}, 小时: ${today.getHours()}`);
-    
-    // 获取中国时区的时间
-    const options = { timeZone: 'Asia/Shanghai' };
-    const chinaTime = new Date(today.toLocaleString('en-US', options));
+    // 获取当前中国时间
+    const chinaTime = getChinaTime();
     console.log(`DB: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
     
-    // 获取年月日
-    const year = chinaTime.getFullYear();
-    const month = String(chinaTime.getMonth() + 1).padStart(2, '0');
-    const day = String(chinaTime.getDate()).padStart(2, '0');
-    // 格式化为YYYY/MM/DD
-    const todayFormatted = `${year}/${month}/${day}`;
+    // 获取今天的格式化日期
+    const todayFormatted = getTodayFormatted();
     
-    const currentHour = chinaTime.getHours();
-    const shouldIncludeToday = currentHour >= 21;
+    // 使用统一函数判断是否显示今天数据
+    const shouldIncludeToday = shouldShowTodayData();
     
-    console.log(`数据过滤: 当前日期=${todayFormatted}, 当前小时=${currentHour}, 应包含今天数据=${shouldIncludeToday}`);
+    console.log(`数据过滤: 当前日期=${todayFormatted}, 当前小时=${chinaTime.getHours()}, 应包含今天数据=${shouldIncludeToday}`);
     console.log(`查询返回记录数: ${result.rows.length}`);
     
     // 如果不到21点，过滤掉当天的数据
     if (!shouldIncludeToday) {
       const filteredRows = result.rows.filter(row => {
-        // 使用格式化函数处理日期
         const rowDate = formatDateForComparison(row.date);
-        const isToday = rowDate === todayFormatted;
-        if (isToday) {
-          console.log(`过滤掉今天的记录: ${rowDate}`);
+        const todayNormalized = normalizeDate(todayFormatted);
+        const isRowToday = rowDate === todayNormalized;
+        if (isRowToday) {
+          console.log(`过滤掉今天的记录: ${row.date} (标准化后: ${rowDate})`);
         }
-        return !isToday;
+        return !isRowToday;
       });
       
       console.log(`过滤后记录数: ${filteredRows.length}`);
@@ -195,38 +188,29 @@ export async function getCumulativeData(dateCondition: string, formattedDate: st
     console.log('原始累计数据日期信息:');
     logDateInfo(result.rows);
     
-    // 检查是否需要过滤掉当天的数据
-    const today = new Date();
-    console.log(`累计DB: 原始服务器时间: ${today.toISOString()}, 小时: ${today.getHours()}`);
-    
-    // 获取中国时区的时间
-    const options = { timeZone: 'Asia/Shanghai' };
-    const chinaTime = new Date(today.toLocaleString('en-US', options));
+    // 获取当前中国时间
+    const chinaTime = getChinaTime();
     console.log(`累计DB: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
     
-    // 获取年月日
-    const year = chinaTime.getFullYear();
-    const month = String(chinaTime.getMonth() + 1).padStart(2, '0');
-    const day = String(chinaTime.getDate()).padStart(2, '0');
-    // 格式化为YYYY/MM/DD
-    const todayFormatted = `${year}/${month}/${day}`;
+    // 获取今天的格式化日期
+    const todayFormatted = getTodayFormatted();
     
-    const currentHour = chinaTime.getHours();
-    const shouldIncludeToday = currentHour >= 21;
+    // 使用统一函数判断是否显示今天数据
+    const shouldIncludeToday = shouldShowTodayData();
     
-    console.log(`累计数据过滤: 当前日期=${todayFormatted}, 当前小时=${currentHour}, 应包含今天数据=${shouldIncludeToday}`);
+    console.log(`累计数据过滤: 当前日期=${todayFormatted}, 当前小时=${chinaTime.getHours()}, 应包含今天数据=${shouldIncludeToday}`);
     console.log(`累计查询返回记录数: ${result.rows.length}`);
     
     // 如果不到21点，过滤掉当天的数据
     if (!shouldIncludeToday) {
       const filteredRows = result.rows.filter(row => {
-        // 使用格式化函数处理日期
         const rowDate = formatDateForComparison(row.date);
-        const isToday = rowDate === todayFormatted;
-        if (isToday) {
-          console.log(`过滤掉今天的累计记录: ${rowDate}`);
+        const todayNormalized = normalizeDate(todayFormatted);
+        const isRowToday = rowDate === todayNormalized;
+        if (isRowToday) {
+          console.log(`过滤掉今天的累计记录: ${row.date} (标准化后: ${rowDate})`);
         }
-        return !isToday;
+        return !isRowToday;
       });
       
       console.log(`累计过滤后记录数: ${filteredRows.length}`);
@@ -268,9 +252,13 @@ export async function getLatestDate(rows: any[]): Promise<string | null> {
   
   // 对日期排序以找到最新日期
   const sortedDates = [...rows].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
+    // 使用normalizeDate确保日期格式一致，然后进行比较
+    const dateA = new Date(normalizeDate(a.date).replace(/\//g, '-'));
+    const dateB = new Date(normalizeDate(b.date).replace(/\//g, '-'));
+    return dateB.getTime() - dateA.getTime();
   });
   
+  // 返回最新日期，保持原始格式
   return sortedDates[0].date;
 }
 

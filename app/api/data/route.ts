@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import db, { getDbConfig } from '../../lib/db';
+import { 
+  getChinaTime, 
+  formatDateSlash, 
+  formatDateDash,
+  normalizeDate, 
+  shouldShowTodayData 
+} from '../../utils/dateUtils';
 
 export async function GET(request: NextRequest) {
   // 验证请求
@@ -29,26 +36,17 @@ export async function GET(request: NextRequest) {
     }
     console.log('数据库连接测试成功');
 
-    // 获取当前日期格式化为字符串 (YYYY-MM-DD)
-    const today = new Date();
-    console.log(`API: 原始服务器时间: ${today.toISOString()}, 小时: ${today.getHours()}`);
-    
-    // 获取中国时区的时间
-    const options = { timeZone: 'Asia/Shanghai' };
-    const chinaTime = new Date(today.toLocaleString('en-US', options));
+    // 获取中国时区的当前时间
+    const chinaTime = getChinaTime();
     console.log(`API: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
     
-    const formattedToday = chinaTime.toISOString().split('T')[0];
-    console.log('今天日期格式化前:', formattedToday);
-    
-    // 转换为YYYY/MM/DD格式，与数据库格式保持一致
-    const formattedTodayForDb = formattedToday.replace(/-/g, '/');
-    console.log('今天日期格式化后(数据库格式):', formattedTodayForDb);
+    // 格式化日期为数据库格式 (YYYY/MM/DD)
+    const formattedTodayForDb = formatDateSlash(chinaTime);
+    console.log('今天日期(数据库格式):', formattedTodayForDb);
 
     // 判断是否已经超过当天21:00
-    const currentHour = chinaTime.getHours();
-    const shouldIncludeToday = currentHour >= 21;
-    console.log(`当前小时: ${currentHour}, 是否包含今天数据: ${shouldIncludeToday}`);
+    const shouldIncludeToday = shouldShowTodayData();
+    console.log(`当前小时: ${chinaTime.getHours()}, 是否包含今天数据: ${shouldIncludeToday}`);
 
     // 先获取表中的一行数据，检查数据结构
     let sampleData;
@@ -86,7 +84,11 @@ export async function GET(request: NextRequest) {
     const frontendIsLatestDay = shouldIncludeToday;
     
     // 验证当前数据是否包含今天
-    const hasTodayData = frontendIsLatestDay && latestDate === formattedTodayForDb.replace(/\//g, '-');
+    // 使用normalizeDate确保日期格式一致性进行比较
+    const hasTodayData = frontendIsLatestDay && 
+                         latestDate && 
+                         normalizeDate(latestDate) === normalizeDate(formattedTodayForDb);
+    
     console.log(`前端显示最新提示: ${frontendIsLatestDay}, 包含今天数据: ${hasTodayData}, 最新日期: ${latestDate}`);
 
     return NextResponse.json({

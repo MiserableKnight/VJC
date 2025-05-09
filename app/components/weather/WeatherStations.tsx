@@ -1,6 +1,7 @@
 'use client';
 
 import { WeatherCard } from './WeatherCard';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface WeatherStation {
   id: string;
@@ -12,6 +13,8 @@ interface WeatherStation {
 }
 
 export function WeatherStations() {
+  const { isMobile } = useResponsive();
+  
   // 定义三个机场的天气站点，添加经纬度信息
   const weatherStations: WeatherStation[] = [
     {
@@ -42,8 +45,12 @@ export function WeatherStations() {
   
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
-      {/* 使用flex-col在移动端强制上下排列，只在大屏幕(lg:)使用网格布局 */}
-      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
+      {/* 根据屏幕尺寸使用不同的布局 */}
+      <div className={`
+        grid 
+        ${isMobile ? 'grid-cols-1' : 'sm:grid-cols-2 lg:grid-cols-3'} 
+        gap-4 md:gap-6
+      `}>
         {weatherStations.map((station) => (
           <WeatherCard
             key={station.id}
