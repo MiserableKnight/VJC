@@ -1,92 +1,88 @@
 # 飞行运营数据可视化平台
 
 ## 项目概述
-该项目是一个飞行运营数据可视化平台，用于展示航空公司的飞行运营数据，包括空时数据、日利用率和飞行循环等关键指标。通过直观的图表展示，帮助航空公司管理人员快速了解运营状况，做出决策。
 
-## 特点
-- 直观展示飞行空时数据、日利用率和飞行循环
-- 支持当日和累计数据对比分析
-- 响应式设计，适配各种设备尺寸
-- 错误处理机制，确保应用稳定性
-- 懒加载技术，提高页面加载性能
+这是一个基于Next.js开发的飞行运营数据可视化平台，提供了多个模块来展示不同类型的航空数据：
+
+- 运行指标
+- 飞机技术状态
+- 飞机运行状态
+- 经济性数据
+- 天气状况
 
 ## 技术栈
-- Next.js 13+ (App Router)
-- TypeScript
-- Recharts (图表库)
-- Tailwind CSS (样式)
+
+- **前端框架**: Next.js 15
+- **UI库**: React 19
+- **样式**: Tailwind CSS
+- **数据获取**: Apollo Client (GraphQL)
+- **后端API**: Apollo Server (GraphQL)
+- **数据可视化**: ECharts, Recharts
+- **数据库**: PostgreSQL
 
 ## 项目结构
 
 ```
-/
-├── app/
-│   ├── api/                # API 端点
-│   │   └── logs/
-│   │       └── error/
-│   │           └── route.ts # 错误日志API
-│   ├── components/         # UI组件
-│   │   ├── ErrorBoundary.tsx
-│   │   └── charts/
-│   │       ├── AirTimeChart.tsx
-│   │       ├── BaseChart.tsx
-│   │       ├── ChartCard.tsx
-│   │       ├── ChartsContainer.tsx
-│   │       ├── FlightCycleChart.tsx
-│   │       ├── LazyChart.tsx
-│   │       └── UtilizationChart.tsx
-│   ├── hooks/              # 自定义Hooks
-│   │   ├── useIntersectionObserver.ts
-│   │   └── useResponsive.ts
-│   ├── utils/              # 工具函数
-│   │   ├── chartUtils.ts
-│   │   ├── errorLogger.ts
-│   │   └── responsiveChartConfig.ts
-│   ├── data/               # 数据服务
-│   ├── globals.css         # 全局样式
-│   ├── layout.tsx          # 布局组件
-│   └── page.tsx            # 主页面
-│
-├── config/                 # 配置文件目录
-│   ├── next/               # Next.js配置
-│   │   └── next.config.js
-│   ├── postcss/            # PostCSS配置
-│   │   └── postcss.config.mjs
-│   └── tsconfig/           # TypeScript配置
-│       ├── base.json
-│       └── nextjs.json
-│
-├── docs/                   # 项目文档
-│   ├── OPTIMIZATION.md     # 优化详细记录
-│   └── 优化建议.md
-│
-├── public/                 # 静态资源
-├── next.config.js          # Next.js配置引用
-├── package.json            # 项目依赖
-└── tsconfig.json           # TypeScript配置引用
+/app
+  /components      - 可重用组件
+    /charts        - 图表相关组件
+  /context         - React上下文
+  /lib             - 工具库
+  /api             - API路由
+  /graphql         - GraphQL模式和解析器
+  /utils           - 工具函数
+  /hooks           - 自定义React钩子
+  /data            - 静态数据
+  /[模块名称]      - 各模块页面
 ```
 
-## 使用说明
-1. 安装依赖: 
-   ```bash
-   npm install
-   ```
+## 功能模块
 
-2. 开发运行: 
-   ```bash
-   npm run dev
-   ```
+### 首页
 
-3. 构建项目: 
-   ```bash
-   npm run build
-   ```
+首页提供了对所有模块的导航入口，点击相应模块可以进入详细数据页面。
 
-4. 生产运行: 
-   ```bash
-   npm start
-   ```
+### 运行指标
 
-## 项目文档
-- [优化记录](./docs/OPTIMIZATION.md) - 项目优化详细记录
-- [优化建议](./docs/优化建议.md) - 项目优化建议 
+显示飞机运行的关键指标图表，包括利用率、飞行周期和飞行时间等数据。
+
+### 飞机技术状态
+
+展示飞机的技术状态信息，包括维护记录、部件状态等。
+
+### 飞机运行状态
+
+提供飞机当前运行状态的实时数据，包括飞行状态、位置等信息。
+
+### 经济性数据
+
+展示与飞机运营相关的经济数据，包括成本分析、收益等。
+
+### 天气状况
+
+提供飞行相关的天气数据，帮助评估飞行条件。
+
+## 开发指南
+
+### 安装依赖
+
+```bash
+npm install
+```
+
+### 运行开发服务器
+
+```bash
+npm run dev
+```
+
+### 构建生产版本
+
+```bash
+npm run build
+npm start
+```
+
+## 模块化设计
+
+本项目采用高度模块化的设计，每个功能模块都有独立的页面和组件，确保代码的可维护性和可扩展性。通用组件被抽象出来以便重用，减少代码重复。 

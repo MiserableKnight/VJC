@@ -1,5 +1,6 @@
 import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
+import { NextRequest } from 'next/server';
 import { schema } from '../../graphql/schema';
 
 // 创建Apollo Server实例
@@ -19,11 +20,11 @@ const handler = startServerAndCreateNextHandler(server, {
 });
 
 // 处理GET和POST请求
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   return handler(request);
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   return handler(request);
 }
 

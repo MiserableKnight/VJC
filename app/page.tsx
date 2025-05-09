@@ -1,16 +1,22 @@
 'use client';
 
-import { ChartsContainer } from './components/charts/ChartsContainer';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { ChartDataProvider } from './context/ChartDataContext';
+import Link from 'next/link';
 import { ApolloProvider } from '@apollo/client';
 import client from './lib/apolloClient';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function Home() {
+  const modules = [
+    { name: '运行指标', path: '/operational-metrics', icon: '📊' },
+    { name: '飞机技术状态', path: '/aircraft-technical-status', icon: '🔧' },
+    { name: '飞机运行状态', path: '/aircraft-operational-status', icon: '✈️' },
+    { name: '经济性数据', path: '/economic-data', icon: '💹' },
+    { name: '天气状况', path: '/weather-conditions', icon: '🌤️' },
+  ];
+
   return (
     <ApolloProvider client={client}>
-      <main className="min-h-screen p-0.5 sm:p-4 md:p-6 bg-gray-50">
-        <h1 className="text-xl sm:text-2xl font-bold text-center my-3 sm:my-8 text-gray-800">飞行运营数据可视化平台</h1>
+      <main className="min-h-screen p-4 sm:p-6 md:p-8 bg-gray-50">
         <ErrorBoundary
           fallback={
             <div className="max-w-3xl mx-auto p-6 bg-red-50 rounded-lg border border-red-200 text-center">
@@ -25,9 +31,25 @@ export default function Home() {
             </div>
           }
         >
-          <ChartDataProvider>
-            <ChartsContainer />
-          </ChartDataProvider>
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl font-bold text-center my-6 sm:my-10 text-gray-800">越捷湿租项目运营数据看板</h1>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
+              {modules.map((module) => (
+                <Link 
+                  key={module.path} 
+                  href={module.path}
+                  className="bg-white hover:bg-blue-50 border border-gray-200 rounded-xl p-6 shadow-sm transition-all hover:shadow-md"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="text-4xl mb-4">{module.icon}</div>
+                    <h2 className="text-xl font-semibold text-gray-800">{module.name}</h2>
+                    <p className="mt-2 text-gray-600">点击查看详细数据</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         </ErrorBoundary>
       </main>
     </ApolloProvider>

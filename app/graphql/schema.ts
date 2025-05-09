@@ -59,6 +59,18 @@ export class ChartDataResponse {
   latestDate?: string;
 }
 
+@ObjectType({ description: "飞机数据" })
+export class AircraftData {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  registration!: string;
+
+  @Field()
+  msn!: string;
+}
+
 // 安全处理表名和模式名
 const schemaName = dbConfig.schema;
 const tableName = dbConfig.table_name;
@@ -187,6 +199,24 @@ export class ChartDataResolver {
       isLatestDay: shouldIncludeToday,
       latestDate,
     };
+  }
+
+  @Query(() => [AircraftData], { description: "获取机队所有飞机数据" })
+  async getAllAircraft(): Promise<AircraftData[]> {
+    console.log('GraphQL: 开始查询机队数据');
+    
+    try {
+      const aircraftData = await db.getFleetData();
+      
+      return aircraftData.map((aircraft: any) => ({
+        id: aircraft.id || aircraft.registration,
+        registration: aircraft.registration,
+        msn: aircraft.msn
+      }));
+    } catch (error) {
+      console.error('获取机队数据失败:', error);
+      throw new Error('Failed to fetch aircraft data');
+    }
   }
 }
 

@@ -279,11 +279,35 @@ export async function closePool(): Promise<void> {
   await pool.end();
 }
 
+// 获取机队数据
+export async function getFleetData(): Promise<any[]> {
+  try {
+    const config = getDbConfig();
+    const schemaName = config.schema;
+    
+    const query = `
+      SELECT *
+      FROM "${schemaName}"."fleet_data"
+      ORDER BY "registration"
+    `;
+    
+    console.log('获取机队数据...');
+    const result = await pool.query(query);
+    console.log(`查询返回机队记录数: ${result.rows.length}`);
+    
+    return result.rows;
+  } catch (error) {
+    console.error('获取机队数据失败:', error);
+    throw error;
+  }
+}
+
 export default {
   testConnection,
   getDailyData,
   getCumulativeData,
   getSampleData,
   getLatestDate,
-  closePool
+  closePool,
+  getFleetData
 }; 

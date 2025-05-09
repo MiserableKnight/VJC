@@ -3,7 +3,7 @@ import "./globals.css";
 import { systemFont, monoFont } from "./fonts";
 
 export const metadata: Metadata = {
-  title: "飞行运营数据可视化平台",
+  title: "越捷湿租项目运营数据看板",
   description: "展示飞行运营相关数据的可视化分析平台",
 };
 
