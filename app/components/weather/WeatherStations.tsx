@@ -41,9 +41,9 @@ export function WeatherStations() {
   ];
   
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
       {/* 使用flex-col在移动端强制上下排列，只在大屏幕(lg:)使用网格布局 */}
-      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
         {weatherStations.map((station) => (
           <WeatherCard
             key={station.id}

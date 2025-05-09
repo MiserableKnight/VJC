@@ -44,10 +44,10 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
     return (
       <div className="border border-gray-200 rounded-lg p-6 text-center">
         <div className="flex flex-col items-center">
-          <div className="text-4xl mb-4">🌤️</div>
-          <h2 className="text-xl font-semibold text-blue-700">{name}</h2>
-          <p className="mt-2 text-gray-600">机场代码: {code}</p>
-          <div className="mt-4 text-gray-500">加载中...</div>
+          <div className="text-5xl mb-4">🌤️</div>
+          <h2 className="text-2xl font-semibold text-blue-700">{name}</h2>
+          <p className="mt-2 text-lg text-gray-600">机场代码: {code}</p>
+          <div className="mt-4 text-lg text-gray-500">加载中...</div>
         </div>
       </div>
     );
@@ -62,11 +62,11 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
         className="border border-gray-200 rounded-lg p-6 hover:bg-blue-50 transition-colors text-center cursor-pointer"
       >
         <div className="flex flex-col items-center">
-          <div className="text-4xl mb-4">🌤️</div>
-          <h2 className="text-xl font-semibold text-blue-700">{name}</h2>
-          <p className="mt-2 text-gray-600">机场代码: {code}</p>
-          <p className="mt-4 text-sm text-red-500">{error || '天气数据不可用'}</p>
-          <p className="mt-2 text-sm text-gray-500">点击查看天气</p>
+          <div className="text-5xl mb-4">🌤️</div>
+          <h2 className="text-2xl font-semibold text-blue-700">{name}</h2>
+          <p className="mt-2 text-lg text-gray-600">机场代码: {code}</p>
+          <p className="mt-4 text-base text-red-500">{error || '天气数据不可用'}</p>
+          <p className="mt-2 text-base text-gray-500">点击查看天气</p>
         </div>
       </a>
     );
@@ -91,26 +91,26 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
       className="border border-gray-200 rounded-lg p-6 hover:bg-blue-50 transition-colors text-center cursor-pointer"
     >
       <div className="flex flex-col items-center">
-        <div className="text-4xl mb-4">{weatherInfo.icon}</div>
-        <h2 className="text-xl font-semibold text-blue-700">{name}</h2>
-        <p className="mt-1 text-gray-600">机场代码: {code}</p>
+        <div className="text-6xl mb-5">{weatherInfo.icon}</div>
+        <h2 className="text-2xl font-semibold text-blue-700">{name}</h2>
+        <p className="mt-2 text-lg text-gray-600">机场代码: {code}</p>
         
-        <div className="mt-4 space-y-2 text-left w-full">
-          <p className="text-md text-gray-800">
+        <div className="mt-5 space-y-3 text-left w-full">
+          <p className="text-xl text-gray-800">
             <span className="font-medium">{weatherInfo.text}</span> {currentTemp.toFixed(1)}°C
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-lg text-gray-600">
             🌡️ 温度: {weather.temperature_2m_min.toFixed(1)}°C ~ {weather.temperature_2m_max.toFixed(1)}°C
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-lg text-gray-600">
             💧 湿度: {currentHumidity.toFixed(0)}%
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-lg text-gray-600">
             💨 风: {windDirText}风 {currentWindSpeed.toFixed(1)}m/s
           </p>
         </div>
         
-        <p className="mt-4 text-xs text-gray-500">点击查看详细天气</p>
+        <p className="mt-5 text-base text-gray-500">点击查看详细天气</p>
       </div>
     </a>
   );
