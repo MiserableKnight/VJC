@@ -13,7 +13,8 @@ interface WeatherStation {
 }
 
 export function WeatherStations() {
-  const { isMobile, isTablet } = useResponsive();
+  // 获取视口尺寸信息
+  const { width, isMobile, isTablet } = useResponsive();
   
   // 定义三个机场的天气站点，添加经纬度信息
   const weatherStations: WeatherStation[] = [
@@ -43,10 +44,13 @@ export function WeatherStations() {
     }
   ];
   
+  // 使用更广泛的条件判断移动设备，确保宽度足够大时才使用多列布局
+  const isMobileView = width < 900; // 设置更高的阈值，确保在较大的移动设备上也是单列
+  
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
-      {/* 移动端强制使用单列布局，平板使用两列，桌面使用三列 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* 使用内联条件判断替代响应式类 */}
+      <div className={`grid ${isMobileView ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-6`}>
         {weatherStations.map((station) => (
           <WeatherCard
             key={station.id}
