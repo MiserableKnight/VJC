@@ -42,7 +42,7 @@ export function WeatherStations() {
   
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {weatherStations.map((station) => (
           <WeatherCard
             key={station.id}
