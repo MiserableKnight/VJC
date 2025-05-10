@@ -39,11 +39,11 @@ export default function Home() {
                 <Link 
                   key={module.path} 
                   href={module.path}
-                  className="bg-white hover:bg-blue-50 border border-gray-200 rounded-lg shadow-sm transition-all hover:shadow-md flex items-center justify-center h-44 sm:h-52"
+                  className="bg-white hover:bg-blue-50 border border-gray-200 rounded-lg shadow-sm transition-all hover:shadow-md flex items-center justify-center h-48 sm:h-56"
                 >
                   <div className="flex flex-col items-center text-center p-4 sm:p-5 w-full">
-                    <div className="text-5xl sm:text-6xl mb-4 sm:mb-6">{module.icon}</div>
-                    <h2 className="text-lg sm:text-2xl font-semibold text-gray-800 px-2">{module.name}</h2>
+                    <div className="text-7xl sm:text-6xl mb-4 sm:mb-6">{module.icon}</div>
+                    <h2 className="text-2xl sm:text-xl font-semibold text-gray-800 px-2">{module.name}</h2>
                   </div>
                 </Link>
               ))}
