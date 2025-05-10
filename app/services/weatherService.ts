@@ -10,6 +10,27 @@ export interface WeatherData {
   precipitation: number[];
   weather_code: number[];
   time: string[];
+  daily_forecast: DailyForecast[];
+}
+
+export interface DailyForecast {
+  date: string;
+  temperature_max: number;
+  temperature_min: number;
+  weather_code: number;
+  precipitation_sum: number;
+  wind_speed_max: number;
+  wind_direction: number;
+}
+
+export interface DailyWeatherData {
+  time: string[];
+  temperature_2m_max: number[];
+  temperature_2m_min: number[];
+  precipitation_sum: number[];
+  weather_code: number[];
+  wind_speed_10m_max: number[];
+  wind_direction_10m_dominant: number[];
 }
 
 // 使用React的cache功能来缓存API响应
@@ -32,6 +53,9 @@ export const fetchWeatherData = cache(
       const max = Math.max(...temperatures);
       const min = Math.min(...temperatures);
       
+      // 处理每日预测数据
+      const dailyForecast = processDailyForecast(data.hourly);
+      
       return {
         temperature_2m: data.hourly.temperature_2m,
         temperature_2m_max: max,
@@ -42,6 +66,7 @@ export const fetchWeatherData = cache(
         precipitation: data.hourly.precipitation,
         weather_code: data.hourly.weather_code,
         time: data.hourly.time,
+        daily_forecast: dailyForecast
       };
     } catch (error) {
       console.error('Error fetching weather data:', error);
@@ -49,6 +74,103 @@ export const fetchWeatherData = cache(
     }
   }
 );
+
+// 获取每日天气预测数据
+export const fetchDailyWeatherData = cache(
+  async (latitude: number, longitude: number, days: number = 5): Promise<DailyWeatherData> => {
+    try {
+      // 使用本地API代理
+      const url = `/api/weather/daily?latitude=${latitude}&longitude=${longitude}&days=${days}`;
+      
+      const response = await fetch(url, { next: { revalidate: 3600 } }); // 1小时缓存
+      
+      if (!response.ok) {
+        throw new Error(`Daily Weather API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      return {
+        time: data.daily.time,
+        temperature_2m_max: data.daily.temperature_2m_max,
+        temperature_2m_min: data.daily.temperature_2m_min,
+        precipitation_sum: data.daily.precipitation_sum,
+        weather_code: data.daily.weather_code,
+        wind_speed_10m_max: data.daily.wind_speed_10m_max,
+        wind_direction_10m_dominant: data.daily.wind_direction_10m_dominant
+      };
+    } catch (error) {
+      console.error('Error fetching daily weather data:', error);
+      throw error;
+    }
+  }
+);
+
+// 处理每日预测数据
+function processDailyForecast(hourlyData: any): DailyForecast[] {
+  const dailyForecast: DailyForecast[] = [];
+  const daysMap = new Map<string, {
+    temps: number[],
+    weatherCodes: number[],
+    precipitation: number[],
+    windSpeeds: number[],
+    windDirections: number[]
+  }>();
+  
+  // 将小时数据按日期分组
+  hourlyData.time.forEach((time: string, index: number) => {
+    const date = time.split('T')[0];
+    if (!daysMap.has(date)) {
+      daysMap.set(date, {
+        temps: [],
+        weatherCodes: [],
+        precipitation: [],
+        windSpeeds: [],
+        windDirections: []
+      });
+    }
+    
+    const dayData = daysMap.get(date)!;
+    dayData.temps.push(hourlyData.temperature_2m[index]);
+    dayData.weatherCodes.push(hourlyData.weather_code[index]);
+    dayData.precipitation.push(hourlyData.precipitation[index]);
+    dayData.windSpeeds.push(hourlyData.wind_speed_10m[index]);
+    dayData.windDirections.push(hourlyData.wind_direction_10m[index]);
+  });
+  
+  // 处理每日数据
+  daysMap.forEach((data, date) => {
+    // 获取当天最常见的天气代码
+    const weatherCodeCounts = data.weatherCodes.reduce((acc: {[key: number]: number}, code: number) => {
+      acc[code] = (acc[code] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const mostCommonWeatherCode = parseInt(
+      Object.keys(weatherCodeCounts).reduce((a, b) => 
+        weatherCodeCounts[parseInt(a)] > weatherCodeCounts[parseInt(b)] ? a : b
+      )
+    );
+    
+    // 计算风向平均值
+    const avgWindDirection = Math.round(
+      data.windDirections.reduce((sum, dir) => sum + dir, 0) / data.windDirections.length
+    );
+    
+    dailyForecast.push({
+      date,
+      temperature_max: Math.max(...data.temps),
+      temperature_min: Math.min(...data.temps),
+      weather_code: mostCommonWeatherCode,
+      precipitation_sum: data.precipitation.reduce((sum, val) => sum + val, 0),
+      wind_speed_max: Math.max(...data.windSpeeds),
+      wind_direction: avgWindDirection
+    });
+  });
+  
+  // 按日期排序
+  return dailyForecast.sort((a, b) => a.date.localeCompare(b.date));
+}
 
 // 将天气代码转换为可读文本和图标
 export function getWeatherDescription(code: number): { text: string; icon: string } {
