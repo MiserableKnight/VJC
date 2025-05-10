@@ -5,8 +5,6 @@ import {
   fetchWeatherData, 
   getWeatherDescription, 
   getWindDirection, 
-  // Removed getCurrentHourData as we'll display multiple forecasts
-  // getCurrentHourData,
   WeatherData,
   DailyForecast
 } from '../../services/weatherService';
@@ -99,42 +97,36 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
     );
   }
 
-  // 获取日期标签
-  const getDayLabel = (index: number, date: string) => {
-    if (index === 0) return '今天';
-    
-    // 其他天显示标准时间格式
-    const dayDate = new Date(date);
-    return dayDate.toLocaleDateString('zh-CN', {
-      month: 'numeric',
-      day: 'numeric',
-      weekday: 'short'
-    });
-  };
-
-  // 获取当前小时的湿度数据
-  const getCurrentHumidity = () => {
-    if (!weather.relative_humidity_2m || weather.relative_humidity_2m.length === 0) {
-      return 'N/A';
+  // 获取当前、未来1小时、未来3小时的索引
+  const now = new Date();
+  let currentIdx = 0;
+  let plus1Idx = 0;
+  let plus3Idx = 0;
+  for (let i = 0; i < weather.time.length; i++) {
+    const t = new Date(weather.time[i]);
+    if (t > now) {
+      currentIdx = i > 0 ? i - 1 : 0;
+      plus1Idx = i;
+      plus3Idx = i + 2 < weather.time.length ? i + 2 : weather.time.length - 1;
+      break;
     }
-    
-    const now = new Date();
-    const currentHour = now.getHours();
-    
-    // 找到最接近当前小时的湿度数据
-    for (let i = 0; i < weather.time.length; i++) {
-      const timeData = new Date(weather.time[i]);
-      if (timeData.getHours() === currentHour) {
-        return weather.relative_humidity_2m[i].toFixed(0);
-      }
-    }
-    
-    // 如果找不到精确匹配，返回第一个值
-    return weather.relative_humidity_2m[0].toFixed(0);
-  };
+  }
 
-  // 最多显示3天预报
-  const dailyForecasts = weather.daily_forecast.slice(0, 3);
+  const hourData = [currentIdx, plus1Idx, plus3Idx].map(idx => ({
+    time: weather.time[idx],
+    temperature: weather.temperature_2m[idx],
+    humidity: weather.relative_humidity_2m[idx],
+    windSpeed: weather.wind_speed_10m[idx],
+    windDir: weather.wind_direction_10m[idx],
+    weatherCode: weather.weather_code[idx],
+  }));
+
+  const getHourLabel = (idx: number) => {
+    if (idx === 0) return '现在';
+    if (idx === 1) return '1小时后';
+    if (idx === 2) return '3小时后';
+    return '';
+  };
 
   return (
     <a 
@@ -144,20 +136,19 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
       className="border border-gray-200 rounded-lg p-6 hover:bg-blue-50 transition-colors cursor-pointer"
     >
       <div className="flex flex-col w-full">
-        {/* 顶部标题 */}
+        {/* 顶部标题和天气图标 */}
         <div className="w-full grid grid-cols-4 gap-5 mb-4">
           <div className="col-span-1">
             <h2 className="text-3xl font-semibold text-blue-700">{name}</h2>
             <p className="text-xl text-gray-600">机场代码: {code}</p>
           </div>
           
-          {/* 天气图标显示在对应日期上方 */}
-          {dailyForecasts.map((day, index) => {
-            const weatherInfo = getWeatherDescription(day.weather_code);
+          {/* 天气图标在顶部 */}
+          {hourData.map((data, idx) => {
+            const weatherInfo = getWeatherDescription(data.weatherCode);
             return (
-              <div key={index} className="col-span-1 flex flex-col items-start">
-                <div className="text-4xl mb-1">{weatherInfo.icon}</div>
-                <div className="text-lg font-medium text-gray-800">{getDayLabel(index, day.date)}</div>
+              <div key={idx} className="col-span-1 text-center">
+                <div className="text-6xl mb-1">{weatherInfo.icon}</div>
               </div>
             );
           })}
@@ -165,34 +156,36 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
         
         {/* 分隔线 */}
         <div className="w-full h-px bg-gray-200 my-4"></div>
-
-        {/* 天气表格数据 */}
+        
+        {/* 天气数据 */}
         <div className="w-full grid grid-cols-4 gap-5 mt-2">
           {/* 第一列 - 标签 */}
           <div className="col-span-1 flex flex-col space-y-5 text-xl text-gray-800">
+            <span>时间</span>
             <span>天气状况</span>
-            <span>当前温度</span> 
+            <span>温度</span>
             <span>湿度</span>
             <span>风况</span>
-            <span>温度范围</span>
           </div>
-
-          {/* 天气数据列 */}
-          {dailyForecasts.map((day, index) => {
-            const weatherInfo = getWeatherDescription(day.weather_code);
-            const windDirection = getWindDirection(day.wind_direction);
+          
+          {/* 数据列 */}
+          {hourData.map((data, idx) => {
+            const weatherInfo = getWeatherDescription(data.weatherCode);
+            const windDirection = getWindDirection(data.windDir);
             return (
-              <div key={index} className="col-span-1 flex flex-col space-y-5 text-xl text-gray-800">
+              <div key={idx} className="col-span-1 flex flex-col space-y-5 text-xl text-gray-800 text-center">
+                <div className="flex flex-col items-center">
+                  <span className="text-lg font-medium text-gray-800">{getHourLabel(idx)}</span>
+                </div>
                 <span>{weatherInfo.text}</span>
-                <span>{day.temperature_max.toFixed(1)}°C</span>
-                <span>{index === 0 ? `${getCurrentHumidity()}%` : 'N/A'}</span>
-                <span>{windDirection} {day.wind_speed_max.toFixed(1)} m/s</span>
-                <span>{day.temperature_min.toFixed(1)}°C ~ {day.temperature_max.toFixed(1)}°C</span>
+                <span>{data.temperature.toFixed(1)}°C</span>
+                <span>{data.humidity ? `${data.humidity.toFixed(0)}%` : 'N/A'}</span>
+                <span>{windDirection} {data.windSpeed.toFixed(1)} m/s</span>
               </div>
             );
           })}
         </div>
-
+        
         {/* 提示信息 */}
         <p className="mt-5 text-base text-blue-500 hover:underline text-center">
           点击查看详细天气
