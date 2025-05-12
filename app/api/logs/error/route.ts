@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { isProduction } from '../../../config/env';
 
 /**
  * 处理错误日志的API路由
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     const formattedLog = `[${new Date(errorLog.timestamp).toISOString()}] [${errorLog.type}] [${errorLog.severity}] ${errorLog.message}\n`;
     
     // 在开发环境中，将日志打印到控制台
-    if (process.env.NODE_ENV === 'development') {
+    if (!isProduction()) {
       console.error('收到错误日志:', errorLog);
     }
     
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     // 例如 MongoDB, Sentry, LogRocket, 等
     
     // 示例：在开发环境中将日志保存到文件
-    if (process.env.NODE_ENV === 'development') {
+    if (!isProduction()) {
       try {
         const logsDir = path.join(process.cwd(), 'logs');
         

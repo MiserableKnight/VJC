@@ -1,4 +1,5 @@
 import { ErrorInfo } from 'react';
+import { isProduction } from '../config/env';
 
 // 定义错误类型
 export enum ErrorType {
@@ -47,14 +48,14 @@ export function logError(error: Error, errorInfo?: ErrorInfo): void {
   };
 
   // 开发环境在控制台打印
-  if (process.env.NODE_ENV === 'development') {
+  if (!isProduction()) {
     console.error('=== 组件错误 ===');
     console.error(errorLog);
     console.error(errorInfo?.componentStack || '无组件堆栈信息');
   }
 
   // 在生产环境中将错误发送到服务器
-  if (process.env.NODE_ENV === 'production') {
+  if (isProduction()) {
     sendToServer(errorLog);
   }
 }
@@ -80,13 +81,13 @@ export function logApiError(error: any, endpoint: string, requestData?: any): vo
   };
 
   // 开发环境在控制台打印
-  if (process.env.NODE_ENV === 'development') {
+  if (!isProduction()) {
     console.error('=== API错误 ===');
     console.error(errorLog);
   }
 
   // 在生产环境中将错误发送到服务器
-  if (process.env.NODE_ENV === 'production') {
+  if (isProduction()) {
     sendToServer(errorLog);
   }
 }
@@ -111,13 +112,13 @@ export function logChartError(error: any, chartType: string, data?: any): void {
   };
 
   // 开发环境在控制台打印
-  if (process.env.NODE_ENV === 'development') {
+  if (!isProduction()) {
     console.error('=== 图表错误 ===');
     console.error(errorLog);
   }
 
   // 在生产环境中将错误发送到服务器
-  if (process.env.NODE_ENV === 'production') {
+  if (isProduction()) {
     sendToServer(errorLog);
   }
 }
@@ -141,13 +142,13 @@ export function logDataError(error: any, dataSource: string, data?: any): void {
   };
 
   // 开发环境在控制台打印
-  if (process.env.NODE_ENV === 'development') {
+  if (!isProduction()) {
     console.error('=== 数据错误 ===');
     console.error(errorLog);
   }
 
   // 在生产环境中将错误发送到服务器
-  if (process.env.NODE_ENV === 'production') {
+  if (isProduction()) {
     sendToServer(errorLog);
   }
 }

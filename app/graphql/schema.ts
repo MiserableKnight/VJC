@@ -1,7 +1,8 @@
 import 'reflect-metadata';
 import { ObjectType, Field, ID, Float, Int, buildSchemaSync, Query, Resolver } from 'type-graphql';
-import db from '../lib/db';
-import { getDbConfig, DbConfig } from '../lib/dbConfig';
+import db from '../database';
+import { getDbConfig } from '../database/config';
+import { DbConfig } from '../database/models';
 
 // 数据库配置
 const dbConfig: DbConfig = getDbConfig();

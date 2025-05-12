@@ -2,11 +2,12 @@ import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
 import { NextRequest } from 'next/server';
 import { schema } from '../../graphql/schema';
+import { isProduction } from '../../config/env';
 
 // 创建Apollo Server实例
 const server = new ApolloServer({
   schema,
-  introspection: process.env.NODE_ENV !== 'production',
+  introspection: !isProduction(),
 });
 
 // 为Next.js App Router创建处理程序

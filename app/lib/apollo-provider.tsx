@@ -2,10 +2,11 @@
 
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { ReactNode, useState, useEffect } from 'react';
+import { ENV } from '../config/env';
 
 // 创建HTTP链接
 const httpLink = createHttpLink({
-  uri: process.env.NEXT_PUBLIC_GRAPHQL_URL || '/api/graphql',
+  uri: ENV.GRAPHQL_URL || '/api/graphql',
   // 在开发模式下，如果你使用的是不同的域名或端口，可能需要credentials
   credentials: 'same-origin'
 });

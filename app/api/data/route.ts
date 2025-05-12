@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import db from '../../lib/db';
-import { getDbConfig } from '../../lib/dbConfig';
+import db, { testConnection } from '../../database';
 import { 
   getChinaTime, 
   formatDateSlash, 
   formatDateDash,
-  normalizeDate, 
-  shouldShowTodayData 
+  normalizeDate
 } from '../../utils/dateUtils';
+import { ENV } from '../../config/env';
+import { shouldShowTodayData } from '../../config/date';
 
 export async function GET(request: NextRequest) {
   // 验证请求
   const authHeader = request.headers.get('authorization');
-  const apiKey = process.env.API_KEY;
+  const apiKey = ENV.API_KEY;
   
   // 如果设置了API密钥，则验证请求头
   if (apiKey && (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== apiKey)) {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     console.log('开始查询数据库');
     
     // 测试连接
-    const isConnected = await db.testConnection();
+    const isConnected = await testConnection();
     if (!isConnected) {
       console.error('数据库连接测试失败');
       return NextResponse.json(
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     // 获取最近一个日期（用于提示信息）
     let latestDate = null;
     if (dailyData.length > 0) {
-      latestDate = await db.getLatestDate(dailyData);
+      latestDate = db.getLatestDate(dailyData);
       console.log('最新历史数据日期:', latestDate);
     }
 

@@ -1,5 +1,6 @@
 import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from '@apollo/client';
 import { onError } from "@apollo/client/link/error";
+import { isProduction } from '../config/env';
 
 const httpLink = new HttpLink({
   uri: '/api/graphql', // GraphQL API的端点
@@ -22,7 +23,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 const client = new ApolloClient({
   link: ApolloLink.from([errorLink, httpLink]),
   cache: new InMemoryCache(),
-  connectToDevTools: process.env.NODE_ENV !== 'production',
+  connectToDevTools: !isProduction(),
 });
 
 export default client; 

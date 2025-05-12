@@ -1,6 +1,8 @@
 /**
  * 日期和时区工具函数
  */
+import { DATA_DISPLAY_CONFIG } from '../config/app';
+import { DATE_FORMAT_OPTIONS, shouldShowTodayData as configShouldShowTodayData } from '../config/date';
 
 /**
  * 获取中国时区的当前时间
@@ -42,10 +44,10 @@ export function normalizeDate(date: string): string {
 
 /**
  * 判断是否应该显示当天数据（21点规则）
+ * @deprecated 使用 config/date.ts 中的 shouldShowTodayData 函数
  */
 export function shouldShowTodayData(): boolean {
-  const chinaTime = getChinaTime();
-  return chinaTime.getHours() >= 21;
+  return configShouldShowTodayData();
 }
 
 /**
