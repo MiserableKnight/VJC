@@ -1,4 +1,3 @@
-import { Pool, PoolClient } from 'pg';
 import { 
   getChinaTime, 
   formatDateSlash, 
@@ -7,41 +6,25 @@ import {
   getTodayFormatted,
   isToday 
 } from '../utils/dateUtils';
-
-// 数据库配置类型定义
-export interface DbConfig {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-  schema: string;
-  table_name: string;
-}
-
-// 从环境变量获取数据库配置
-export const getDbConfig = (): DbConfig => ({
-  host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT || "5432"),
-  database: process.env.DB_NAME || "postgres",
-  user: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASSWORD || "",
-  schema: process.env.DB_SCHEMA || "public",
-  table_name: process.env.DB_TABLE || "op_data"
-});
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getDbConfig, DbConfig } from './dbConfig';
 
 // 创建单例连接池
 const dbConfig = getDbConfig();
-const pool = new Pool({
-  host: dbConfig.host,
-  port: dbConfig.port,
-  database: dbConfig.database,
-  user: dbConfig.user,
-  password: dbConfig.password,
-  ssl: {
-    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
+
+// 创建Supabase客户端
+let supabaseClient: SupabaseClient | null = null;
+if (dbConfig.supabase_url && dbConfig.supabase_key) {
+  try {
+    supabaseClient = createClient(dbConfig.supabase_url, dbConfig.supabase_key);
+    console.log('Supabase客户端初始化成功');
+  } catch (error) {
+    console.error('Supabase客户端初始化失败:', error);
+    throw new Error('Supabase客户端初始化失败');
   }
-});
+} else {
+  throw new Error('未配置Supabase连接信息');
+}
 
 // 数据模型接口
 export interface FlightData {
@@ -58,6 +41,84 @@ export interface FlightData {
   cumulative_flight_leg?: number;
   cumulative_daily_utilization_air_time?: number;
   cumulative_daily_utilization_block_time?: number;
+}
+
+// 获取每日数据
+export async function getDailyData(dateCondition: string, formattedDate: string): Promise<any[]> {
+  console.log('使用Supabase客户端查询每日数据');
+  
+  try {
+    const tableName = process.env.DB_OP_DATA_TABLE || 'op_data';
+    let query = supabaseClient!
+      .from(tableName)
+      .select(`
+        date,
+        air_time,
+        block_time,
+        fc,
+        flight_leg,
+        daily_utilization_air_time,
+        daily_utilization_block_time
+      `);
+
+    // 根据日期条件设置过滤器
+    if (dateCondition === '<=') {
+      query = query.lte('date', formattedDate);
+    } else if (dateCondition === '>=') {
+      query = query.gte('date', formattedDate);
+    } else if (dateCondition === '=') {
+      query = query.eq('date', formattedDate);
+    }
+    
+    query = query.order('date', { ascending: true });
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Supabase查询失败:', error);
+      return [];
+    }
+    
+    // 打印数据集中的日期信息
+    console.log('Supabase原始每日数据日期信息:');
+    logDateInfo(data || []);
+    
+    // 获取当前中国时间
+    const chinaTime = getChinaTime();
+    console.log(`Supabase DB: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
+    
+    // 获取今天的格式化日期
+    const todayFormatted = getTodayFormatted();
+    
+    // 使用统一函数判断是否显示今天数据
+    const shouldIncludeToday = shouldShowTodayData();
+    
+    console.log(`Supabase数据过滤: 当前日期=${todayFormatted}, 当前小时=${chinaTime.getHours()}, 应包含今天数据=${shouldIncludeToday}`);
+    console.log(`Supabase查询返回记录数: ${data?.length || 0}`);
+    
+    // 如果不到21点，过滤掉当天的数据
+    if (!shouldIncludeToday && data) {
+      const filteredRows = data.filter(row => {
+        const rowDate = formatDateForComparison(row.date);
+        const todayNormalized = normalizeDate(todayFormatted);
+        const isRowToday = rowDate === todayNormalized;
+        if (isRowToday) {
+          console.log(`过滤掉今天的记录: ${row.date} (标准化后: ${rowDate})`);
+        }
+        return !isRowToday;
+      });
+      
+      console.log(`Supabase过滤后记录数: ${filteredRows.length}`);
+      console.log('Supabase过滤后数据日期信息:');
+      logDateInfo(filteredRows);
+      return filteredRows;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('使用Supabase获取每日数据失败:', error);
+    return [];
+  }
 }
 
 // 格式化日期，确保统一格式
@@ -88,109 +149,63 @@ function logDateInfo(rows: any[]): void {
 // 测试数据库连接
 export async function testConnection(): Promise<boolean> {
   try {
-    const result = await pool.query('SELECT NOW()');
-    return result.rows.length > 0;
+    const tableName = process.env.DB_OP_DATA_TABLE || 'op_data';
+    const { data, error } = await supabaseClient!
+      .from(tableName)
+      .select('date')
+      .limit(1);
+      
+    if (error) throw error;
+    return true;
   } catch (error) {
     console.error('数据库连接测试失败:', error);
     return false;
   }
 }
 
-// 获取每日数据
-export async function getDailyData(dateCondition: string, formattedDate: string): Promise<any[]> {
-  const config = getDbConfig();
-  const schemaName = config.schema;
-  const tableName = config.table_name;
-  
-  const query = `
-    SELECT 
-      "date",
-      "air_time",
-      "block_time",
-      "fc",
-      "flight_leg",
-      "daily_utilization_air_time",
-      "daily_utilization_block_time"
-    FROM "${schemaName}"."${tableName}"
-    WHERE "date" ${dateCondition} $1
-    ORDER BY "date"
-  `;
-  
-  try {
-    const result = await pool.query(query, [formattedDate]);
-    
-    // 打印数据集中的日期信息
-    console.log('原始每日数据日期信息:');
-    logDateInfo(result.rows);
-    
-    // 获取当前中国时间
-    const chinaTime = getChinaTime();
-    console.log(`DB: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
-    
-    // 获取今天的格式化日期
-    const todayFormatted = getTodayFormatted();
-    
-    // 使用统一函数判断是否显示今天数据
-    const shouldIncludeToday = shouldShowTodayData();
-    
-    console.log(`数据过滤: 当前日期=${todayFormatted}, 当前小时=${chinaTime.getHours()}, 应包含今天数据=${shouldIncludeToday}`);
-    console.log(`查询返回记录数: ${result.rows.length}`);
-    
-    // 如果不到21点，过滤掉当天的数据
-    if (!shouldIncludeToday) {
-      const filteredRows = result.rows.filter(row => {
-        const rowDate = formatDateForComparison(row.date);
-        const todayNormalized = normalizeDate(todayFormatted);
-        const isRowToday = rowDate === todayNormalized;
-        if (isRowToday) {
-          console.log(`过滤掉今天的记录: ${row.date} (标准化后: ${rowDate})`);
-        }
-        return !isRowToday;
-      });
-      
-      console.log(`过滤后记录数: ${filteredRows.length}`);
-      console.log('过滤后数据日期信息:');
-      logDateInfo(filteredRows);
-      return filteredRows;
-    }
-    
-    return result.rows;
-  } catch (error) {
-    console.error('获取每日数据失败:', error);
-    throw error;
-  }
-}
-
 // 获取累计数据
 export async function getCumulativeData(dateCondition: string, formattedDate: string): Promise<any[]> {
-  const config = getDbConfig();
-  const schemaName = config.schema;
-  const tableName = config.table_name;
-  
-  const query = `
-    SELECT 
-      "date",
-      "cumulative_air_time",
-      "cumulative_block_time",
-      "cumulative_fc",
-      "cumulative_flight_leg",
-      "cumulative_daily_utilization_air_time",
-      "cumulative_daily_utilization_block_time"
-    FROM "${schemaName}"."${tableName}"
-    WHERE "date" ${dateCondition} $1
-    ORDER BY "date"
-  `;
+  console.log('使用Supabase客户端查询累计数据');
   
   try {
-    const result = await pool.query(query, [formattedDate]);
+    const tableName = process.env.DB_OP_DATA_TABLE || 'op_data';
+    let query = supabaseClient!
+      .from(tableName)
+      .select(`
+        date,
+        cumulative_air_time,
+        cumulative_block_time,
+        cumulative_fc,
+        cumulative_flight_leg,
+        cumulative_daily_utilization_air_time,
+        cumulative_daily_utilization_block_time
+      `);
+
+    // 根据日期条件设置过滤器
+    if (dateCondition === '<=') {
+      query = query.lte('date', formattedDate);
+    } else if (dateCondition === '>=') {
+      query = query.gte('date', formattedDate);
+    } else if (dateCondition === '=') {
+      query = query.eq('date', formattedDate);
+    }
+    
+    query = query.order('date', { ascending: true });
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Supabase累计数据查询失败:', error);
+      return [];
+    }
     
     // 打印数据集中的日期信息
-    console.log('原始累计数据日期信息:');
-    logDateInfo(result.rows);
+    console.log('Supabase原始累计数据日期信息:');
+    logDateInfo(data || []);
     
     // 获取当前中国时间
     const chinaTime = getChinaTime();
-    console.log(`累计DB: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
+    console.log(`Supabase累计DB: 中国时区时间: ${chinaTime.toISOString()}, 小时: ${chinaTime.getHours()}`);
     
     // 获取今天的格式化日期
     const todayFormatted = getTodayFormatted();
@@ -198,12 +213,12 @@ export async function getCumulativeData(dateCondition: string, formattedDate: st
     // 使用统一函数判断是否显示今天数据
     const shouldIncludeToday = shouldShowTodayData();
     
-    console.log(`累计数据过滤: 当前日期=${todayFormatted}, 当前小时=${chinaTime.getHours()}, 应包含今天数据=${shouldIncludeToday}`);
-    console.log(`累计查询返回记录数: ${result.rows.length}`);
+    console.log(`Supabase累计数据过滤: 当前日期=${todayFormatted}, 当前小时=${chinaTime.getHours()}, 应包含今天数据=${shouldIncludeToday}`);
+    console.log(`Supabase累计查询返回记录数: ${data?.length || 0}`);
     
     // 如果不到21点，过滤掉当天的数据
-    if (!shouldIncludeToday) {
-      const filteredRows = result.rows.filter(row => {
+    if (!shouldIncludeToday && data) {
+      const filteredRows = data.filter(row => {
         const rowDate = formatDateForComparison(row.date);
         const todayNormalized = normalizeDate(todayFormatted);
         const isRowToday = rowDate === todayNormalized;
@@ -213,36 +228,39 @@ export async function getCumulativeData(dateCondition: string, formattedDate: st
         return !isRowToday;
       });
       
-      console.log(`累计过滤后记录数: ${filteredRows.length}`);
-      console.log('过滤后累计数据日期信息:');
+      console.log(`Supabase累计过滤后记录数: ${filteredRows.length}`);
+      console.log('Supabase过滤后累计数据日期信息:');
       logDateInfo(filteredRows);
       return filteredRows;
     }
     
-    return result.rows;
+    return data || [];
   } catch (error) {
-    console.error('获取累计数据失败:', error);
-    throw error;
+    console.error('使用Supabase获取累计数据失败:', error);
+    return [];
   }
 }
 
 // 获取数据样例
 export async function getSampleData(): Promise<any> {
-  const config = getDbConfig();
-  const schemaName = config.schema;
-  const tableName = config.table_name;
-  
-  const query = `
-    SELECT * FROM "${schemaName}"."${tableName}"
-    LIMIT 1
-  `;
+  console.log('使用Supabase客户端获取数据样例');
   
   try {
-    const result = await pool.query(query);
-    return result.rows[0];
+    const tableName = process.env.DB_OP_DATA_TABLE || 'op_data';
+    const { data, error } = await supabaseClient!
+      .from(tableName)
+      .select('*')
+      .limit(1);
+    
+    if (error) {
+      console.error('Supabase获取数据样例失败:', error);
+      return null;
+    }
+    
+    return data && data.length > 0 ? data[0] : null;
   } catch (error) {
-    console.error('获取数据样例失败:', error);
-    throw error;
+    console.error('使用Supabase获取数据样例失败:', error);
+    return null;
   }
 }
 
@@ -262,31 +280,26 @@ export async function getLatestDate(rows: any[]): Promise<string | null> {
   return sortedDates[0].date;
 }
 
-// 关闭数据库连接池（在应用关闭时调用）
-export async function closePool(): Promise<void> {
-  await pool.end();
-}
-
 // 获取机队数据
 export async function getFleetData(): Promise<any[]> {
+  console.log('使用Supabase客户端获取机队数据');
+  
   try {
-    const config = getDbConfig();
-    const schemaName = config.schema;
+    const { data, error } = await supabaseClient!
+      .from('fleet_data')
+      .select('*')
+      .order('registration');
     
-    const query = `
-      SELECT *
-      FROM "${schemaName}"."fleet_data"
-      ORDER BY "registration"
-    `;
+    if (error) {
+      console.error('Supabase获取机队数据失败:', error);
+      return [];
+    }
     
-    console.log('获取机队数据...');
-    const result = await pool.query(query);
-    console.log(`查询返回机队记录数: ${result.rows.length}`);
-    
-    return result.rows;
+    console.log(`Supabase查询返回机队记录数: ${data?.length || 0}`);
+    return data || [];
   } catch (error) {
-    console.error('获取机队数据失败:', error);
-    throw error;
+    console.error('使用Supabase获取机队数据失败:', error);
+    return [];
   }
 }
 
@@ -296,6 +309,5 @@ export default {
   getCumulativeData,
   getSampleData,
   getLatestDate,
-  closePool,
   getFleetData
 }; 
