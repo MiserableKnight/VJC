@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import db, { getDbConfig } from '../../lib/db';
+import db from '../../lib/db';
+import { getDbConfig } from '../../lib/dbConfig';
 import { 
   getChinaTime, 
   formatDateSlash, 
