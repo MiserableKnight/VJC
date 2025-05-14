@@ -22,12 +22,37 @@ export function AircraftLegDataTable({ registration, title }: AircraftLegDataTab
     return match ? match[1] : airport;
   };
 
-  // 格式化时间，只保留前4位（小时和分钟）
+  // 将北京时间（UTC+8）转换为越南时间（UTC+7）
+  const convertToVietnamTime = (beijingTime: string) => {
+    if (!beijingTime) return '';
+    
+    // 如果时间格式是 HH:MM 或 HH:MM:SS
+    const match = beijingTime.match(/^(\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (match) {
+      const hours = parseInt(match[1]);
+      const minutes = match[2];
+      
+      // 减去1小时，处理跨天的情况
+      let vietnamHours = hours - 1;
+      if (vietnamHours < 0) vietnamHours = 23;
+      
+      // 格式化为两位数
+      const formattedHours = vietnamHours.toString().padStart(2, '0');
+      return `${formattedHours}:${minutes}`;
+    }
+    
+    return beijingTime;
+  };
+
+  // 格式化时间，只保留前4位（小时和分钟），并转换为越南时间
   const formatTime = (time: string) => {
     if (!time) return '';
     // 如果时间格式是 HH:MM:SS，只保留 HH:MM
     const match = time.match(/^(\d{2}:\d{2})/);
-    return match ? match[1] : time;
+    const beijingTime = match ? match[1] : time;
+    
+    // 转换为越南时间
+    return convertToVietnamTime(beijingTime);
   };
 
   // 获取航段数据
@@ -112,7 +137,7 @@ export function AircraftLegDataTable({ registration, title }: AircraftLegDataTab
     <div className="w-full overflow-hidden pb-2">
       {title && <h3 className="text-xl font-medium mb-2">{title}</h3>}
       <div className="text-base text-gray-500 mb-2">
-        最后更新时间: {lastUpdated}
+        最后更新时间: {lastUpdated} <span className="ml-2 text-sm text-blue-600">(以下为当地时间)</span>
       </div>
       <div className="overflow-x-auto pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table className="min-w-full divide-y divide-gray-200 border border-gray-300 whitespace-nowrap table-fixed">
@@ -131,16 +156,16 @@ export function AircraftLegDataTable({ registration, title }: AircraftLegDataTab
                 降落
               </th>
               <th scope="col" className="px-1 py-3 text-center text-base font-semibold text-gray-700 uppercase tracking-wider w-[70px]">
-                推出
+                OUT
               </th>
               <th scope="col" className="px-1 py-3 text-center text-base font-semibold text-gray-700 uppercase tracking-wider w-[70px]">
-                起飞
+                OFF
               </th>
               <th scope="col" className="px-1 py-3 text-center text-base font-semibold text-gray-700 uppercase tracking-wider w-[70px]">
-                落地
+                ON
               </th>
               <th scope="col" className="px-1 py-3 text-center text-base font-semibold text-gray-700 uppercase tracking-wider w-[70px]">
-                到位
+                IN
               </th>
             </tr>
           </thead>
