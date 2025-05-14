@@ -198,16 +198,16 @@ export function DailyForecastCard({
     <div className="daily-forecast-card">
       <h3 className="card-title">{title}</h3>
       <div className="forecast-list">
-        {weather.daily.time.map((time, index) => {
-          const weatherInfo = getWeatherDescription(weather.daily.weather_code[index]);
+        {weather.daily && weather.daily.time && weather.daily.time.map((time, index) => {
+          const weatherInfo = getWeatherDescription(weather.daily && weather.daily.weather_code ? weather.daily.weather_code[index] : 0);
           return (
             <div key={time} className="forecast-day">
               <div className="forecast-date">{formatDate(time)}</div>
               <div className="forecast-icon">{weatherInfo.icon}</div>
               <div className="forecast-desc">{weatherInfo.description}</div>
               <div className="forecast-temp">
-                <span className="max-temp">{Math.round(weather.daily.temperature_2m_max[index])}°</span>
-                <span className="min-temp">{Math.round(weather.daily.temperature_2m_min[index])}°</span>
+                <span className="max-temp">{Math.round(weather.daily && weather.daily.temperature_2m_max ? weather.daily.temperature_2m_max[index] : 0)}°</span>
+                <span className="min-temp">{Math.round(weather.daily && weather.daily.temperature_2m_min ? weather.daily.temperature_2m_min[index] : 0)}°</span>
               </div>
             </div>
           );

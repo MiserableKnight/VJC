@@ -1,6 +1,6 @@
 import { Arg, Ctx, Field, ID, ObjectType, Query, Resolver } from 'type-graphql';
 import { getTodayForDisplay } from '../utils/dateUtils';
-import { fetchFlightHistory, getFallbackFlightData } from '../services/flightRadarService';
+import { FlightRadarService } from '../services/flightRadarService';
 
 // 定义飞机对象类型
 @ObjectType()
@@ -323,7 +323,7 @@ export class AircraftResolver {
     console.log(`GraphQL: 获取飞机 ${registration} 的飞行历史数据`);
     
     // 获取模拟数据
-    const modelData = await fetchFlightHistory(registration);
+    const modelData = await FlightRadarService.fetchFlightHistory(registration);
     
     // 转换为GraphQL类型
     return modelData.map(flight => new FlightHistory(

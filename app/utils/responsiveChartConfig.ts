@@ -221,7 +221,7 @@ export const defaultLineConfig: ResponsiveValue<LineConfig> = {
 /**
  * 计算基于数据长度的X轴间隔
  */
-export function calculateChartInterval(dataLength: number, breakpoint: Breakpoint): number {
+export function calculateChartInterval(dataLength: number, breakpoint: Breakpoint | 'xs'): number {
   if (dataLength <= 10) return 0;
   
   switch(breakpoint) {
@@ -244,7 +244,7 @@ export function calculateChartInterval(dataLength: number, breakpoint: Breakpoin
 /**
  * 计算基于数据长度的图表底部边距
  */
-export function calculateChartBottomMargin(dataLength: number, breakpoint: Breakpoint): number {
+export function calculateChartBottomMargin(dataLength: number, breakpoint: Breakpoint | 'xs'): number {
   if (dataLength <= 5) return 50;
   if (dataLength <= 10) return 60;
   
