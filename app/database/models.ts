@@ -77,6 +77,7 @@ export interface EconomicData {
   flight_number: string;           // 航班号
   departure_airport: string;       // 起飞机场
   arrival_airport: string;         // 降落机场
+  out_time?: string;               // 推出时间
   out_fuel_kg: number;             // OUT油量(kg)
   off_fuel_kg: number;             // OFF油量(kg)
   on_fuel_kg: number;              // ON油量(kg)

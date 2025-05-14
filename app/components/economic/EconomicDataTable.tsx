@@ -49,14 +49,17 @@ export function EconomicDataTable({ registration, title }: EconomicDataTableProp
           return true;
         });
         
-        // 按推出时间排序（如果有）或航班号排序
+        // 按照推出时间out_time排序，与飞机运行状态表保持一致
         const sortedData = [...filteredData].sort((a, b) => {
-          // 如果有out_fuel_kg，则按out_fuel_kg排序（模拟推出时间顺序）
-          if (a.out_fuel_kg !== b.out_fuel_kg) {
-            return a.out_fuel_kg > b.out_fuel_kg ? -1 : 1;
-          }
-          // 否则按航班号排序
-          return a.flight_number.localeCompare(b.flight_number);
+          // 如果没有out_time字段，则尝试使用leg_data相关联记录查找
+          // 这里假设经济性数据中至少有out_time或与之相关的时间信息
+          
+          // 如果推出时间为空，则排在后面
+          if (!a.out_time) return 1;
+          if (!b.out_time) return -1;
+          
+          // 将时间格式转换为可比较的格式（假设格式为HH:MM或类似格式）
+          return a.out_time.localeCompare(b.out_time);
         });
         
         setEconomicData(sortedData);
@@ -104,7 +107,7 @@ export function EconomicDataTable({ registration, title }: EconomicDataTableProp
     <div className="w-full overflow-hidden pb-2">
       {title && <h3 className="text-xl font-medium mb-2">{title}</h3>}
       <div className="text-base text-gray-500 mb-2">
-        最后更新时间: {lastUpdated} <span className="ml-2 text-sm text-blue-600">(以下为当地时间)</span>
+        最后更新时间: {lastUpdated}
       </div>
       <div className="overflow-x-auto pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table className="min-w-full divide-y divide-gray-200 border border-gray-300 whitespace-nowrap table-fixed">

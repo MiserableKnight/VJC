@@ -137,7 +137,7 @@ export function AircraftLegDataTable({ registration, title }: AircraftLegDataTab
     <div className="w-full overflow-hidden pb-2">
       {title && <h3 className="text-xl font-medium mb-2">{title}</h3>}
       <div className="text-base text-gray-500 mb-2">
-        最后更新时间: {lastUpdated} <span className="ml-2 text-sm text-blue-600">(以下为当地时间)</span>
+        最后更新时间: {lastUpdated} <span className="text-blue-600">（以下为当地时间）</span>
       </div>
       <div className="overflow-x-auto pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table className="min-w-full divide-y divide-gray-200 border border-gray-300 whitespace-nowrap table-fixed">

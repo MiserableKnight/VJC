@@ -44,7 +44,7 @@ export async function getEconomicData() {
     console.log(`今天的航段数据记录数: ${todayLegData.length}`);
     
     // 将航段数据转换为经济性数据格式
-    const economicData = todayLegData.map(leg => {
+    let economicData = todayLegData.map(leg => {
       // 使用leg_data中的油量字段
       // 只有当OUT和IN数据都有时才计算空地油耗
       const groundFuelConsumption = (leg.out_fuel_kg !== undefined && leg.out_fuel_kg !== null && leg.out_fuel_kg !== 0 && 
@@ -65,6 +65,7 @@ export async function getEconomicData() {
         flight_number: leg.flight_number,
         departure_airport: leg.departure_airport,
         arrival_airport: leg.arrival_airport,
+        out_time: leg.out_time,
         out_fuel_kg: leg.out_fuel_kg,
         off_fuel_kg: leg.off_fuel_kg,
         on_fuel_kg: leg.on_fuel_kg,
@@ -72,6 +73,16 @@ export async function getEconomicData() {
         ground_fuel_consumption: groundFuelConsumption,
         air_fuel_consumption: airFuelConsumption
       };
+    });
+    
+    // 按照out_time（推出时间）排序，保持与飞机运行状态表一致的排序
+    economicData = economicData.sort((a, b) => {
+      // 如果推出时间为空，则排在后面
+      if (!a.out_time) return 1;
+      if (!b.out_time) return -1;
+      
+      // 将时间格式转换为可比较的格式
+      return a.out_time.localeCompare(b.out_time);
     });
     
     console.log(`处理后的今日经济性数据记录数: ${economicData.length}`);
