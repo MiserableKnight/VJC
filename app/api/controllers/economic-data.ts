@@ -1,14 +1,14 @@
 import db from '../../database';
 import { testConnection } from '../../database/connection';
 import { successResponse, errorResponse } from '../../lib/api-utils';
-import { getTodayFormatted } from '../../utils/dateUtils';
+import { getTodayFormatted, normalizeDate } from '../../utils/dateUtils';
 
 /**
  * 获取经济性数据
  */
 export async function getEconomicData() {
   try {
-    console.log('开始查询经济性数据（从航段数据）');
+    console.log('开始查询经济性数据（从leg_data表）');
     
     // 测试数据库连接
     const isConnected = await testConnection();
@@ -17,9 +17,9 @@ export async function getEconomicData() {
       return errorResponse('数据库连接失败', 500);
     }
     
-    console.log('数据库连接测试成功，开始获取航段数据作为经济性数据来源');
+    console.log('数据库连接测试成功，开始获取航段数据作为经济性数据');
     
-    // 获取航段数据作为经济性数据源
+    // 从leg_data表获取数据作为经济性数据源
     const allLegData = await db.getLegData();
     console.log(`获取到航段数据记录数: ${allLegData.length}`);
     
@@ -27,46 +27,57 @@ export async function getEconomicData() {
     const today = getTodayFormatted().replace(/\//g, '-');
     console.log(`今天的日期: ${today}`);
     
+    // 记录所有可用的日期，便于调试
+    const availableDates = new Set<string>();
+    allLegData.forEach(leg => {
+      const normalizedDate = normalizeDate(leg.date).replace(/\//g, '-');
+      availableDates.add(normalizedDate);
+    });
+    console.log(`数据库中可用的日期: ${Array.from(availableDates).join(', ')}`);
+    
     // 筛选今天的数据
     const todayLegData = allLegData.filter(leg => {
-      const legDate = leg.date.replace(/\//g, '-');
+      const legDate = normalizeDate(leg.date).replace(/\//g, '-');
       return legDate === today;
     });
     
     console.log(`今天的航段数据记录数: ${todayLegData.length}`);
     
-    // 模拟经济性数据（从航段数据转换）
-    const economicData = todayLegData.map(leg => ({
-      date: leg.date,
-      operating_aircraft: leg.operating_aircraft,
-      msn: leg.msn,
-      flight_number: leg.flight_number,
-      departure_airport: leg.departure_airport,
-      arrival_airport: leg.arrival_airport,
-      out_fuel: Math.floor(Math.random() * 1000) + 5000, // 模拟数据
-      off_fuel: Math.floor(Math.random() * 800) + 4500,
-      on_fuel: Math.floor(Math.random() * 500) + 2000,
-      in_fuel: Math.floor(Math.random() * 300) + 1800,
-      ground_fuel_consumption: 0, // 将在前端计算
-      air_fuel_consumption: 0 // 将在前端计算
-    }));
-    
-    // 计算油耗
-    const processedData = economicData.map(item => {
-      const groundFuelConsumption = item.out_fuel - item.in_fuel;
-      const airFuelConsumption = item.off_fuel - item.on_fuel;
+    // 将航段数据转换为经济性数据格式
+    const economicData = todayLegData.map(leg => {
+      // 使用leg_data中的油量字段
+      // 只有当OUT和IN数据都有时才计算空地油耗
+      const groundFuelConsumption = (leg.out_fuel_kg !== undefined && leg.out_fuel_kg !== null && leg.out_fuel_kg !== 0 && 
+                                    leg.in_fuel_kg !== undefined && leg.in_fuel_kg !== null && leg.in_fuel_kg !== 0) 
+                                    ? leg.out_fuel_kg - leg.in_fuel_kg 
+                                    : undefined;
+      
+      // 只有当OFF和ON数据都有时才计算空中油耗
+      const airFuelConsumption = (leg.off_fuel_kg !== undefined && leg.off_fuel_kg !== null && leg.off_fuel_kg !== 0 && 
+                                leg.on_fuel_kg !== undefined && leg.on_fuel_kg !== null && leg.on_fuel_kg !== 0) 
+                                ? leg.off_fuel_kg - leg.on_fuel_kg 
+                                : undefined;
       
       return {
-        ...item,
+        date: leg.date,
+        operating_aircraft: leg.operating_aircraft,
+        msn: leg.msn,
+        flight_number: leg.flight_number,
+        departure_airport: leg.departure_airport,
+        arrival_airport: leg.arrival_airport,
+        out_fuel_kg: leg.out_fuel_kg,
+        off_fuel_kg: leg.off_fuel_kg,
+        on_fuel_kg: leg.on_fuel_kg,
+        in_fuel_kg: leg.in_fuel_kg,
         ground_fuel_consumption: groundFuelConsumption,
         air_fuel_consumption: airFuelConsumption
       };
     });
     
-    console.log(`生成的今日经济性数据记录数: ${processedData.length}`);
+    console.log(`处理后的今日经济性数据记录数: ${economicData.length}`);
     
     return successResponse({
-      economicData: processedData
+      economicData: economicData
     });
   } catch (error) {
     console.error('经济性数据查询错误', error);

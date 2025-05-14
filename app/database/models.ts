@@ -61,6 +61,10 @@ export interface LegData {
   off_time: string;                // 起飞时间
   on_time: string;                 // 落地时间
   in_time: string;                 // 到位时间
+  out_fuel_kg?: number;            // 推出时油量(kg)
+  off_fuel_kg?: number;            // 起飞时油量(kg)
+  on_fuel_kg?: number;             // 落地时油量(kg)
+  in_fuel_kg?: number;             // 到位时油量(kg)
 }
 
 /**
@@ -73,10 +77,10 @@ export interface EconomicData {
   flight_number: string;           // 航班号
   departure_airport: string;       // 起飞机场
   arrival_airport: string;         // 降落机场
-  out_fuel: number;                // OUT油量
-  off_fuel: number;                // OFF油量
-  on_fuel: number;                 // ON油量
-  in_fuel: number;                 // IN油量
+  out_fuel_kg: number;             // OUT油量(kg)
+  off_fuel_kg: number;             // OFF油量(kg)
+  on_fuel_kg: number;              // ON油量(kg)
+  in_fuel_kg: number;              // IN油量(kg)
   ground_fuel_consumption?: number; // 空地油耗（计算值：OUT油量-IN油量）
   air_fuel_consumption?: number;    // 空中油耗（计算值：OFF油量-ON油量）
 } 

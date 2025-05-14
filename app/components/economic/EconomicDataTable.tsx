@@ -51,9 +51,9 @@ export function EconomicDataTable({ registration, title }: EconomicDataTableProp
         
         // 按推出时间排序（如果有）或航班号排序
         const sortedData = [...filteredData].sort((a, b) => {
-          // 如果有out_fuel，则按out_fuel排序（模拟推出时间顺序）
-          if (a.out_fuel !== b.out_fuel) {
-            return a.out_fuel > b.out_fuel ? -1 : 1;
+          // 如果有out_fuel_kg，则按out_fuel_kg排序（模拟推出时间顺序）
+          if (a.out_fuel_kg !== b.out_fuel_kg) {
+            return a.out_fuel_kg > b.out_fuel_kg ? -1 : 1;
           }
           // 否则按航班号排序
           return a.flight_number.localeCompare(b.flight_number);
@@ -104,7 +104,7 @@ export function EconomicDataTable({ registration, title }: EconomicDataTableProp
     <div className="w-full overflow-hidden pb-2">
       {title && <h3 className="text-xl font-medium mb-2">{title}</h3>}
       <div className="text-base text-gray-500 mb-2">
-        最后更新时间: {lastUpdated}
+        最后更新时间: {lastUpdated} <span className="ml-2 text-sm text-blue-600">(以下为当地时间)</span>
       </div>
       <div className="overflow-x-auto pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table className="min-w-full divide-y divide-gray-200 border border-gray-300 whitespace-nowrap table-fixed">
@@ -158,16 +158,16 @@ export function EconomicDataTable({ registration, title }: EconomicDataTableProp
                   {formatAirport(item.arrival_airport)}
                 </td>
                 <td className="px-1 py-4 whitespace-nowrap text-lg font-medium text-gray-900 text-center">
-                  {formatNumber(item.out_fuel)}
+                  {formatNumber(item.out_fuel_kg)}
                 </td>
                 <td className="px-1 py-4 whitespace-nowrap text-lg font-medium text-gray-900 text-center">
-                  {formatNumber(item.off_fuel)}
+                  {formatNumber(item.off_fuel_kg)}
                 </td>
                 <td className="px-1 py-4 whitespace-nowrap text-lg font-medium text-gray-900 text-center">
-                  {formatNumber(item.on_fuel)}
+                  {formatNumber(item.on_fuel_kg)}
                 </td>
                 <td className="px-1 py-4 whitespace-nowrap text-lg font-medium text-gray-900 text-center">
-                  {formatNumber(item.in_fuel)}
+                  {formatNumber(item.in_fuel_kg)}
                 </td>
                 <td className="px-1 py-4 whitespace-nowrap text-lg font-medium text-gray-900 text-center">
                   {formatNumber(item.ground_fuel_consumption)}

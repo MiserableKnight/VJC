@@ -335,22 +335,8 @@ export async function getEconomicData(): Promise<EconomicData[]> {
       return [];
     }
     
-    // 计算空地油耗和空中油耗
-    const processedData = (data || []).map(item => {
-      // 空地油耗 = OUT油量 - IN油量
-      const groundFuelConsumption = item.out_fuel - item.in_fuel;
-      // 空中油耗 = OFF油量 - ON油量
-      const airFuelConsumption = item.off_fuel - item.on_fuel;
-      
-      return {
-        ...item,
-        ground_fuel_consumption: groundFuelConsumption,
-        air_fuel_consumption: airFuelConsumption
-      };
-    });
-    
-    console.log(`Supabase查询返回经济性数据记录数: ${processedData?.length || 0}`);
-    return processedData || [];
+    console.log(`Supabase查询返回经济性数据记录数: ${data?.length || 0}`);
+    return data || [];
   } catch (error) {
     console.error('使用Supabase获取经济性数据失败:', error);
     return [];
