@@ -1,3 +1,5 @@
+'use client';
+
 import { ErrorInfo } from 'react';
 import { isProduction } from '../config/env';
 
@@ -56,7 +58,7 @@ export function logError(error: Error, errorInfo?: ErrorInfo): void {
 
   // 在生产环境中将错误发送到服务器
   if (isProduction()) {
-    sendToServer(errorLog);
+    sendErrorToAPI(errorLog);
   }
 }
 
@@ -88,7 +90,7 @@ export function logApiError(error: any, endpoint: string, requestData?: any): vo
 
   // 在生产环境中将错误发送到服务器
   if (isProduction()) {
-    sendToServer(errorLog);
+    sendErrorToAPI(errorLog);
   }
 }
 
@@ -119,7 +121,7 @@ export function logChartError(error: any, chartType: string, data?: any): void {
 
   // 在生产环境中将错误发送到服务器
   if (isProduction()) {
-    sendToServer(errorLog);
+    sendErrorToAPI(errorLog);
   }
 }
 
@@ -149,15 +151,15 @@ export function logDataError(error: any, dataSource: string, data?: any): void {
 
   // 在生产环境中将错误发送到服务器
   if (isProduction()) {
-    sendToServer(errorLog);
+    sendErrorToAPI(errorLog);
   }
 }
 
 /**
- * 发送错误日志到服务器
- * 可以使用各种日志服务，如Sentry, LogRocket等
+ * 发送错误日志到API
+ * 客户端安全版本，不依赖Node.js模块
  */
-function sendToServer(errorLog: ErrorLog): void {
+function sendErrorToAPI(errorLog: ErrorLog): void {
   // 在实际应用中，替换为实际的错误日志服务
   // 这里只是一个示例
   try {

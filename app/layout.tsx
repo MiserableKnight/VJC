@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { systemFont, monoFont } from "./fonts";
+import QueryProvider from "./context/QueryProvider";
+import ClientMonitoring from "./components/ClientMonitoring";
 
 export const metadata: Metadata = {
   title: "越捷湿租项目运营数据看板",
@@ -27,7 +29,10 @@ export default function RootLayout({
         className="antialiased system-font"
         style={systemFont.style}
       >
-        {children}
+        <QueryProvider>
+          {children}
+          <ClientMonitoring />
+        </QueryProvider>
       </body>
     </html>
   );

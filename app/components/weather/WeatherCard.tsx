@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  fetchWeatherData, 
-  getWeatherDescription, 
-  getWindDirection, 
+  WeatherService, 
   WeatherData,
   DailyForecast
 } from '../../services/weatherService';
@@ -26,7 +24,7 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
     async function loadWeatherData() {
       try {
         setLoading(true);
-        const data = await fetchWeatherData(latitude, longitude);
+        const data = await WeatherService.fetchWeatherData(latitude, longitude);
         setWeather(data);
         setError(null);
       } catch (err) {
@@ -67,7 +65,7 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
     );
   }
 
-  if (error || !weather) {
+  if (error || !weather || !weather.success || !weather.hourly) {
     return (
       <a 
         href={url}
@@ -89,7 +87,7 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
           <div className="w-full h-px bg-gray-200 my-4"></div>
           
           <div className="w-full mt-8 mb-8 text-center">
-            <p className="text-2xl text-red-500">{error || '天气数据不可用'}</p>
+            <p className="text-2xl text-red-500">{error || weather?.message || '天气数据不可用'}</p>
             <p className="mt-4 text-xl text-gray-500">点击查看天气</p>
           </div>
         </div>
@@ -102,23 +100,23 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
   let currentIdx = 0;
   let plus1Idx = 0;
   let plus3Idx = 0;
-  for (let i = 0; i < weather.time.length; i++) {
-    const t = new Date(weather.time[i]);
+  for (let i = 0; i < weather.hourly.time.length; i++) {
+    const t = new Date(weather.hourly.time[i]);
     if (t > now) {
       currentIdx = i > 0 ? i - 1 : 0;
       plus1Idx = i;
-      plus3Idx = i + 2 < weather.time.length ? i + 2 : weather.time.length - 1;
+      plus3Idx = i + 2 < weather.hourly.time.length ? i + 2 : weather.hourly.time.length - 1;
       break;
     }
   }
 
   const hourData = [currentIdx, plus1Idx, plus3Idx].map(idx => ({
-    time: weather.time[idx],
-    temperature: weather.temperature_2m[idx],
-    humidity: weather.relative_humidity_2m[idx],
-    windSpeed: weather.wind_speed_10m[idx],
-    windDir: weather.wind_direction_10m[idx],
-    weatherCode: weather.weather_code[idx],
+    time: weather.hourly!.time[idx],
+    temperature: weather.hourly!.temperature_2m[idx],
+    humidity: weather.hourly!.relative_humidity_2m[idx],
+    windSpeed: weather.hourly!.wind_speed_10m[idx],
+    windDir: weather.hourly!.wind_direction_10m[idx],
+    weatherCode: weather.hourly!.weather_code[idx],
   }));
 
   const getHourLabel = (idx: number) => {
@@ -145,7 +143,7 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
           
           {/* 天气图标在顶部 */}
           {hourData.map((data, idx) => {
-            const weatherInfo = getWeatherDescription(data.weatherCode);
+            const weatherInfo = WeatherService.getWeatherDescription(data.weatherCode);
             return (
               <div key={idx} className="col-span-1 text-center">
                 <div className="text-6xl mb-1">{weatherInfo.icon}</div>
@@ -170,8 +168,8 @@ export function WeatherCard({ name, code, latitude, longitude, url }: WeatherCar
           
           {/* 数据列 */}
           {hourData.map((data, idx) => {
-            const weatherInfo = getWeatherDescription(data.weatherCode);
-            const windDirection = getWindDirection(data.windDir);
+            const weatherInfo = WeatherService.getWeatherDescription(data.weatherCode);
+            const windDirection = WeatherService.getWindDirection(data.windDir);
             return (
               <div key={idx} className="col-span-1 flex flex-col space-y-5 text-xl text-gray-800 text-center">
                 <div className="flex flex-col items-center">

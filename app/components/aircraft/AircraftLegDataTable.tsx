@@ -14,6 +14,7 @@ export function AircraftLegDataTable({ registration, title }: AircraftLegDataTab
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>(new Date().toLocaleTimeString());
+  const [dataFetched, setDataFetched] = useState<boolean>(false);
 
   // 格式化机场代码，只保留四字代码
   const formatAirport = (airport: string) => {
@@ -22,12 +23,12 @@ export function AircraftLegDataTable({ registration, title }: AircraftLegDataTab
     return match ? match[1] : airport;
   };
 
-  // 将北京时间（UTC+8）转换为越南时间（UTC+7）
-  const convertToVietnamTime = (beijingTime: string) => {
-    if (!beijingTime) return '';
+  // 将北京时间转换为越南时间（减去1小时）
+  const formatTime = (time: string) => {
+    if (!time) return '';
     
     // 如果时间格式是 HH:MM 或 HH:MM:SS
-    const match = beijingTime.match(/^(\d{2}):(\d{2})(?::(\d{2}))?/);
+    const match = time.match(/^(\d{2}):(\d{2})(?::(\d{2}))?/);
     if (match) {
       const hours = parseInt(match[1]);
       const minutes = match[2];
@@ -41,18 +42,7 @@ export function AircraftLegDataTable({ registration, title }: AircraftLegDataTab
       return `${formattedHours}:${minutes}`;
     }
     
-    return beijingTime;
-  };
-
-  // 格式化时间，只保留前4位（小时和分钟），并转换为越南时间
-  const formatTime = (time: string) => {
-    if (!time) return '';
-    // 如果时间格式是 HH:MM:SS，只保留 HH:MM
-    const match = time.match(/^(\d{2}:\d{2})/);
-    const beijingTime = match ? match[1] : time;
-    
-    // 转换为越南时间
-    return convertToVietnamTime(beijingTime);
+    return time;
   };
 
   // 获取航段数据
@@ -94,16 +84,32 @@ export function AircraftLegDataTable({ registration, title }: AircraftLegDataTab
         
         setLegData(sortedData);
         setLastUpdated(new Date().toLocaleTimeString());
+        setDataFetched(true);
+        
+        // 添加一个延迟来确保加载状态被正确关闭
+        setTimeout(() => {
+          setLoading(false);
+        }, 300);
       } catch (err) {
         setError(err instanceof Error ? err.message : '获取航段数据失败');
         console.error('获取航段数据出错:', err);
-      } finally {
         setLoading(false);
+        setDataFetched(true);
       }
     }
 
     fetchLegData();
-  }, [registration]);
+    
+    // 添加一个安全机制，确保loading状态不会永远停留在true
+    const safetyTimer = setTimeout(() => {
+      if (!dataFetched) {
+        setLoading(false);
+        console.warn('数据加载超时，强制关闭加载状态');
+      }
+    }, 5000); // 5秒后强制关闭加载状态
+    
+    return () => clearTimeout(safetyTimer);
+  }, [registration, dataFetched]);
 
   // 加载状态
   if (loading) {

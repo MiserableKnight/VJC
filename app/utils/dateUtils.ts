@@ -5,14 +5,22 @@ import { DATA_DISPLAY_CONFIG } from '../config/app';
 import { DATE_FORMAT_OPTIONS, shouldShowTodayData as configShouldShowTodayData } from '../config/date';
 
 /**
- * 获取中国时区的当前时间
- * 使用UTC+8计算，避免依赖系统时区设置
+ * 获取越南时区的当前时间
+ * 使用UTC+7计算，避免依赖系统时区设置
+ */
+export function getVietnamTime(): Date {
+  const now = new Date();
+  // 越南时区是UTC+7
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 7));
+}
+
+/**
+ * 兼容旧代码的别名函数
+ * @deprecated 请使用 getVietnamTime() 代替
  */
 export function getChinaTime(): Date {
-  const now = new Date();
-  // 中国时区是UTC+8
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  return new Date(utc + (3600000 * 8));
+  return getVietnamTime();
 }
 
 /**
@@ -51,10 +59,10 @@ export function shouldShowTodayData(): boolean {
 }
 
 /**
- * 获取当前中国日期的格式化字符串(YYYY/MM/DD)
+ * 获取当前越南日期的格式化字符串(YYYY/MM/DD)
  */
 export function getTodayFormatted(): string {
-  return formatDateSlash(getChinaTime());
+  return formatDateSlash(getVietnamTime());
 }
 
 /**
@@ -67,12 +75,12 @@ export function isToday(dateStr: string): boolean {
 }
 
 /**
- * 判断是否处于运营时间（北京时间7:45-22:00）
+ * 判断是否处于运营时间（越南时间7:45-22:00）
  */
 export function isOperationalHours(): boolean {
-  const chinaTime = getChinaTime();
-  const hours = chinaTime.getHours();
-  const minutes = chinaTime.getMinutes();
+  const vietnamTime = getVietnamTime();
+  const hours = vietnamTime.getHours();
+  const minutes = vietnamTime.getMinutes();
   
   // 转换为分钟表示，方便比较
   const currentMinutes = hours * 60 + minutes;
@@ -86,10 +94,10 @@ export function isOperationalHours(): boolean {
  * 获取当前日期，格式化为显示用的格式（DD MMM YYYY）
  */
 export function getTodayForDisplay(): string {
-  const chinaTime = getChinaTime();
-  const day = String(chinaTime.getDate()).padStart(2, '0');
-  const month = chinaTime.toLocaleString('en-US', { month: 'short' });
-  const year = chinaTime.getFullYear();
+  const vietnamTime = getVietnamTime();
+  const day = String(vietnamTime.getDate()).padStart(2, '0');
+  const month = vietnamTime.toLocaleString('en-US', { month: 'short' });
+  const year = vietnamTime.getFullYear();
   return `${day} ${month} ${year}`;
 }
 

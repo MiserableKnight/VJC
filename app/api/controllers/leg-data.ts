@@ -23,7 +23,7 @@ export async function getLegData() {
     const allLegData = await db.getLegData();
     console.log(`获取到航段数据记录数: ${allLegData.length}`);
     
-    // 获取今天的日期
+    // 获取今天的日期（越南时区UTC+7）
     const today = getTodayFormatted().replace(/\//g, '-');
     console.log(`今天的日期: ${today}`);
     

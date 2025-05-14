@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode, FC, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, FC, useCallback, useRef } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import client from '../lib/apolloClient'; // 导入Apollo Client实例
 import { logApiError, logDataError } from '../utils/errorLogger';
@@ -73,12 +73,18 @@ interface ChartDataProviderProps {
  * 负责通过GraphQL获取、处理和提供图表数据及相关状态
  */
 export const ChartDataProvider: FC<ChartDataProviderProps> = ({ children }) => {
-  const { data, loading, error: apolloError, refetch } = useQuery(GET_CHART_DATA, {
+  const { data, loading: apolloLoading, error: apolloError, refetch } = useQuery(GET_CHART_DATA, {
     client: client, // 明确指定client实例
     notifyOnNetworkStatusChange: true, // 网络状态变化时通知组件
   });
-
-  const [isRetrying, setIsRetrying] = useState(false); // 用于UI显示重试状态
+  
+  // 管理加载状态和重试状态
+  const [loading, setLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
+  
+  // 记录初始加载时间作为参考
+  const loadingStartTimeRef = useRef<number>(Date.now());
 
   // 将Apollo的错误对象转换为字符串消息
   const error = apolloError ? apolloError.message : null;
@@ -88,15 +94,27 @@ export const ChartDataProvider: FC<ChartDataProviderProps> = ({ children }) => {
   const isLatestDay = data?.chartData?.isLatestDay || false;
   const latestDate = data?.chartData?.latestDate || null;
 
+  // 处理重试逻辑
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
+    setLoading(true); // 重新开始加载
+    loadingStartTimeRef.current = Date.now(); // 重置加载开始时间
+    
     try {
       await refetch();
+      
+      // 添加延迟以确保UI更新完成
+      setTimeout(() => {
+        setLoading(false);
+        setIsRetrying(false);
+        setDataFetched(true);
+      }, 300);
     } catch (e: any) {
       logApiError(e, '/api/graphql (retry)', { query: GET_CHART_DATA.loc?.source.body });
-      // 错误已由useQuery的error状态处理
+      setLoading(false);
+      setIsRetrying(false);
+      setDataFetched(true);
     }
-    setIsRetrying(false);
   }, [refetch]);
 
   // 记录API错误
@@ -105,6 +123,32 @@ export const ChartDataProvider: FC<ChartDataProviderProps> = ({ children }) => {
       logApiError(apolloError, '/api/graphql', { query: GET_CHART_DATA.loc?.source.body });
     }
   }, [apolloError]);
+  
+  // 监控Apollo加载状态的变化
+  useEffect(() => {
+    if (!apolloLoading && !dataFetched) {
+      // 数据加载完成
+      setDataFetched(true);
+      
+      // 添加延迟以确保UI更新完成
+      setTimeout(() => {
+        setLoading(false);
+      }, 300);
+    }
+  }, [apolloLoading, dataFetched]);
+  
+  // 添加超时保护，防止加载状态无限持续
+  useEffect(() => {
+    const loadingTimeout = setTimeout(() => {
+      const loadingDuration = Date.now() - loadingStartTimeRef.current;
+      if (loading && loadingDuration > 10000) { // 10秒超时
+        console.warn('图表数据加载超时，强制关闭加载状态');
+        setLoading(false);
+      }
+    }, 10000);
+    
+    return () => clearTimeout(loadingTimeout);
+  }, [loading]);
 
   const contextValue: ChartDataContextState = {
     combinedData,
@@ -114,9 +158,6 @@ export const ChartDataProvider: FC<ChartDataProviderProps> = ({ children }) => {
     isLatestDay,
     latestDate,
     refetch: handleRetry, // 将refetch暴露为context的一部分，方便子组件调用
-    // fetchData和handleRetry现在通过refetch实现，如果旧的接口还需要，可以映射到refetch
-    // fetchData: handleRetry, 
-    // handleRetry: handleRetry,
   };
 
   return (

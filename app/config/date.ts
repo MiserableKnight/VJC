@@ -4,7 +4,7 @@
  */
 
 import { DATA_DISPLAY_CONFIG } from './app';
-import { getChinaTime } from '../utils/dateUtils';
+import { getVietnamTime } from '../utils/dateUtils';
 
 /**
  * 判断是否应该显示今天的数据
@@ -13,8 +13,8 @@ import { getChinaTime } from '../utils/dateUtils';
  * @returns 是否应该显示今天的数据
  */
 export function shouldShowTodayData(): boolean {
-  const chinaTime = getChinaTime();
-  const currentHour = chinaTime.getHours();
+  const vietnamTime = getVietnamTime();
+  const currentHour = vietnamTime.getHours();
   
   // 如果当前小时大于等于配置的显示时间，则显示今天的数据
   return currentHour >= DATA_DISPLAY_CONFIG.TODAY_DATA_DISPLAY_HOUR;

@@ -1,6 +1,9 @@
+// 添加服务器组件标记
+'use server';
+
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { isProduction } from '../../../config/env';
 
 /**
