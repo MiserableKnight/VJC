@@ -67,4 +67,20 @@ export function getOperationalDataTableName(): string {
  */
 export function getFleetDataTableName(): string {
   return ENV.DB_FLEET_TABLE;
+}
+
+/**
+ * 获取航段数据表名
+ * @returns 航段数据表名
+ */
+export function getLegDataTableName(): string {
+  return ENV.DB_LEG_DATA_TABLE;
+}
+
+/**
+ * 获取经济性数据表名
+ * @returns 经济性数据表名
+ */
+export function getEconomicDataTableName(): string {
+  return ENV.DB_ECONOMIC_DATA_TABLE;
 } 

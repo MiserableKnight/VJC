@@ -1,6 +1,6 @@
 import { getSupabaseClient } from './connection';
-import { getOperationalDataTableName, getFleetDataTableName } from './config';
-import { FlightData, AircraftData } from './models';
+import { getOperationalDataTableName, getFleetDataTableName, getLegDataTableName, getEconomicDataTableName } from './config';
+import { FlightData, AircraftData, LegData, EconomicData } from './models';
 import { 
   getChinaTime, 
   formatDateSlash, 
@@ -285,11 +285,85 @@ export async function getFleetData(): Promise<AircraftData[]> {
   }
 }
 
+/**
+ * 获取航段数据
+ * @returns 航段数据数组
+ */
+export async function getLegData(): Promise<LegData[]> {
+  console.log('使用Supabase客户端获取航段数据');
+  
+  try {
+    const tableName = getLegDataTableName();
+    const supabaseClient = getSupabaseClient();
+    
+    const { data, error } = await supabaseClient
+      .from(tableName)
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase获取航段数据失败:', error);
+      return [];
+    }
+    
+    console.log(`Supabase查询返回航段记录数: ${data?.length || 0}`);
+    return data || [];
+  } catch (error) {
+    console.error('使用Supabase获取航段数据失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取经济性数据
+ * @returns 经济性数据数组
+ */
+export async function getEconomicData(): Promise<EconomicData[]> {
+  console.log('使用Supabase客户端获取经济性数据');
+  
+  try {
+    const tableName = getEconomicDataTableName();
+    const supabaseClient = getSupabaseClient();
+    
+    const { data, error } = await supabaseClient
+      .from(tableName)
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase获取经济性数据失败:', error);
+      return [];
+    }
+    
+    // 计算空地油耗和空中油耗
+    const processedData = (data || []).map(item => {
+      // 空地油耗 = OUT油量 - IN油量
+      const groundFuelConsumption = item.out_fuel - item.in_fuel;
+      // 空中油耗 = OFF油量 - ON油量
+      const airFuelConsumption = item.off_fuel - item.on_fuel;
+      
+      return {
+        ...item,
+        ground_fuel_consumption: groundFuelConsumption,
+        air_fuel_consumption: airFuelConsumption
+      };
+    });
+    
+    console.log(`Supabase查询返回经济性数据记录数: ${processedData?.length || 0}`);
+    return processedData || [];
+  } catch (error) {
+    console.error('使用Supabase获取经济性数据失败:', error);
+    return [];
+  }
+}
+
 // 导出默认对象
 export default {
   getDailyData,
   getCumulativeData,
   getSampleData,
   getLatestDate,
-  getFleetData
+  getFleetData,
+  getLegData,
+  getEconomicData
 }; 

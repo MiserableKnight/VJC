@@ -15,6 +15,8 @@ export interface EnvConfig {
   DB_SCHEMA: string;
   DB_OP_DATA_TABLE: string;
   DB_FLEET_TABLE: string;
+  DB_LEG_DATA_TABLE: string;
+  DB_ECONOMIC_DATA_TABLE: string;
   
   // API配置
   GRAPHQL_URL: string;
@@ -37,6 +39,8 @@ export const ENV: EnvConfig = {
   DB_SCHEMA: process.env.DB_SCHEMA || 'public',
   DB_OP_DATA_TABLE: process.env.DB_OP_DATA_TABLE || 'op_data',
   DB_FLEET_TABLE: process.env.DB_FLEET_TABLE || 'fleet_data',
+  DB_LEG_DATA_TABLE: process.env.DB_LEG_DATA_TABLE || 'leg_data',
+  DB_ECONOMIC_DATA_TABLE: process.env.DB_ECONOMIC_DATA_TABLE || 'economic_data',
   
   // API配置
   GRAPHQL_URL: process.env.NEXT_PUBLIC_GRAPHQL_URL || '',

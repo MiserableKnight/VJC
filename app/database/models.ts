@@ -45,4 +45,38 @@ export interface AircraftData {
   type?: string;
   delivery_date?: string;
   status?: string;
+}
+
+/**
+ * 航段数据接口
+ */
+export interface LegData {
+  date: string;                    // 日期
+  operating_aircraft: string;      // 飞机注册号
+  msn: string;                     // 制造序列号
+  flight_number: string;           // 航班号
+  departure_airport: string;       // 起飞机场
+  arrival_airport: string;         // 降落机场
+  out_time: string;                // 推出时间
+  off_time: string;                // 起飞时间
+  on_time: string;                 // 落地时间
+  in_time: string;                 // 到位时间
+}
+
+/**
+ * 经济性数据接口
+ */
+export interface EconomicData {
+  date: string;                    // 日期
+  operating_aircraft: string;      // 飞机注册号
+  msn: string;                     // 制造序列号
+  flight_number: string;           // 航班号
+  departure_airport: string;       // 起飞机场
+  arrival_airport: string;         // 降落机场
+  out_fuel: number;                // OUT油量
+  off_fuel: number;                // OFF油量
+  on_fuel: number;                 // ON油量
+  in_fuel: number;                 // IN油量
+  ground_fuel_consumption?: number; // 空地油耗（计算值：OUT油量-IN油量）
+  air_fuel_consumption?: number;    // 空中油耗（计算值：OFF油量-ON油量）
 } 
