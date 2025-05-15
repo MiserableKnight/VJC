@@ -1,8 +1,6 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
 
 interface AnalyticsEvent {
   eventType: string;
@@ -20,6 +18,7 @@ interface AnalyticsEvent {
 
 /**
  * 处理用户行为分析事件的API路由
+ * 在Vercel部署中，文件系统是只读的，因此不进行文件写入
  */
 export async function POST(request: Request) {
   try {
@@ -34,57 +33,11 @@ export async function POST(request: Request) {
       userAgent: request.headers.get('user-agent') || 'unknown'
     };
     
-    // 构建日志文件名，按事件类型和日期分割日志
-    const today = new Date().toISOString().split('T')[0];
-    const eventType = eventData.eventType.toLowerCase();
-    const logFileName = `analytics-${eventType}-${today}.log`;
-    const logDir = path.join(process.cwd(), 'logs', 'analytics');
-    const logPath = path.join(logDir, logFileName);
+    // 记录到控制台，但不写入文件
+    console.log(`分析事件已记录: ${eventData.eventType} - ${eventData.action}`);
     
-    // 确保日志目录存在
-    try {
-      await fs.mkdir(logDir, { recursive: true });
-    } catch (err) {
-      console.error('创建分析日志目录失败:', err);
-    }
-    
-    // 写入日志文件
-    try {
-      await fs.appendFile(
-        logPath, 
-        JSON.stringify(logEntry) + '\n', 
-        { flag: 'a+' }
-      );
-      
-      // 不要在生产环境打印敏感信息
-      console.log(`分析事件已记录: ${eventData.eventType} - ${eventData.action}`);
-    } catch (err) {
-      console.error('写入分析日志文件失败:', err);
-    }
-    
-    // 只保留过去30天的日志文件
-    try {
-      const files = await fs.readdir(logDir);
-      const analyticsLogs = files.filter(file => 
-        file.startsWith('analytics-') && file.endsWith('.log')
-      );
-      
-      // 计算30天前的日期
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const cutoffDate = thirtyDaysAgo.toISOString().split('T')[0];
-      
-      // 删除过旧的日志文件
-      for (const file of analyticsLogs) {
-        const dateMatch = file.match(/analytics-\w+-(\d{4}-\d{2}-\d{2})\.log/);
-        if (dateMatch && dateMatch[1] < cutoffDate) {
-          await fs.unlink(path.join(logDir, file));
-          console.log(`删除过期分析日志文件: ${file}`);
-        }
-      }
-    } catch (err) {
-      console.error('清理旧分析日志文件失败:', err);
-    }
+    // 在Vercel环境中，可以考虑将数据发送到分析服务
+    // 例如Vercel Analytics、Google Analytics或自定义分析平台
     
     // 如果是高价值事件，可以立即进行一些处理
     if (eventData.category === 'CONVERSION') {

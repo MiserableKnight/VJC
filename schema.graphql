@@ -5,95 +5,20 @@
 
 type Query {
   """获取图表所需的所有数据"""
-  chartData: oQ!
-  getAircraftDetails(registration: String!): ok
+  chartData: oG!
+  getAircraftDetails(registration: String!): oj
 
   """获取单架机故障统计"""
-  getAircraftFailureStats: [oB!]!
-  getAircraftFlightHistory(registration: String!): [oj!]!
+  getAircraftFailureStats: [oQ!]!
+  getAircraftFlightHistory(registration: String!): [oF!]!
 
   """获取机队所有飞机数据"""
-  getAllAircraft: [oG!]!
-  getAllAircraftFailures: [oF!]!
-}
-
-"""飞机故障统计"""
-type oB {
-  """累计飞行小时"""
-  cumulative_air_time: Float!
-
-  """故障千时率"""
-  failure_rate_per_1000_hours: Float!
-  msn: ID!
-  registration: ID!
-
-  """故障总数"""
-  total_failures: Int!
-}
-
-type oF {
-  ata: String!
-  date_reported: String!
-  failure_description: String!
-  id: ID!
-  is_396: Boolean!
-  is_aog: Boolean!
-  is_sdr: Boolean!
-  msn: String!
-  notes: String
-  operation_impact: String!
-  registration: String!
-  resolution_measures: String!
-  severity: String!
-}
-
-"""飞机数据"""
-type oG {
-  id: ID!
-  msn: String!
-  registration: String!
-}
-
-"""API响应数据"""
-type oQ {
-  """合并后的图表数据"""
-  combinedData: [oq!]!
-
-  """是否为最新一天的数据"""
-  isLatestDay: Boolean!
-
-  """最新数据的日期"""
-  latestDate: String
-}
-
-type oj {
-  actualDeparture: String!
-  date: String!
-  flightNumber: String!
-  flightTime: String!
-  fromAirport: String!
-  fromCode: String!
-  id: ID!
-  scheduledArrival: String!
-  scheduledDeparture: String!
-  status: String!
-  toAirport: String!
-  toCode: String!
-}
-
-type ok {
-  age: String
-  airline: String
-  id: ID!
-  msn: String!
-  operator: String
-  registration: String!
-  serialNumber: String
-  type: String
+  getAllAircraft: [oH!]!
+  getAllAircraftFailures: [oM!]!
 }
 
 """图表数据项"""
-type oq {
+type oB {
   """累计飞行时间"""
   cumulative_air_time: Float
 
@@ -133,4 +58,79 @@ type oq {
 
   """故障千时率"""
   failure_rate_per_1000_hours: Float
+}
+
+type oF {
+  actualDeparture: String!
+  date: String!
+  flightNumber: String!
+  flightTime: String!
+  fromAirport: String!
+  fromCode: String!
+  id: ID!
+  scheduledArrival: String!
+  scheduledDeparture: String!
+  status: String!
+  toAirport: String!
+  toCode: String!
+}
+
+"""API响应数据"""
+type oG {
+  """合并后的图表数据"""
+  combinedData: [oB!]!
+
+  """是否为最新一天的数据"""
+  isLatestDay: Boolean!
+
+  """最新数据的日期"""
+  latestDate: String
+}
+
+"""飞机数据"""
+type oH {
+  id: ID!
+  msn: String!
+  registration: String!
+}
+
+type oM {
+  ata: String!
+  date_reported: String!
+  failure_description: String!
+  id: ID!
+  is_396: Boolean!
+  is_aog: Boolean!
+  is_sdr: Boolean!
+  msn: String!
+  notes: String
+  operation_impact: String!
+  registration: String!
+  resolution_measures: String!
+  severity: String!
+}
+
+"""飞机故障统计"""
+type oQ {
+  """累计飞行小时"""
+  cumulative_air_time: Float!
+
+  """故障千时率"""
+  failure_rate_per_1000_hours: Float!
+  msn: ID!
+  registration: ID!
+
+  """故障总数"""
+  total_failures: Int!
+}
+
+type oj {
+  age: String
+  airline: String
+  id: ID!
+  msn: String!
+  operator: String
+  registration: String!
+  serialNumber: String
+  type: String
 }
