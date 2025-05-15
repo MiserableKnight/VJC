@@ -256,23 +256,29 @@ export function logFeatureUsage(featureName: string, details?: Record<string, an
 }
 
 /**
- * 发送分析数据到服务器
+ * 将事件发送到服务器
  */
 function sendToServer(event: UserEvent): void {
   try {
+    // 在Vercel部署中禁用API日志记录，避免文件系统错误
+    if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+      console.log('[Analytics Event]', event);
+      return;
+    }
+    
+    // 发送事件到分析API
     fetch('/api/analytics/event', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(event),
-      // 分析日志不应该阻塞UI
-      keepalive: true
-    }).catch(e => {
-      console.error('发送分析事件失败:', e);
+      keepalive: true // 确保页面卸载时也能发送
+    }).catch((error) => {
+      console.error('发送分析事件失败:', error);
     });
-  } catch (e) {
-    console.error('分析事件处理失败:', e);
+  } catch (error) {
+    console.error('准备分析事件失败:', error);
   }
 }
 

@@ -85,7 +85,7 @@ const handleWebVitals = (
   metric: Metric, 
   options: WebVitalsReportOptions = {}
 ): void => {
-  const { reportTo = isProduction() ? 'api' : 'console', debug = !isProduction(), path } = options;
+  const { reportTo = isProduction() ? 'console' : 'console', debug = !isProduction(), path } = options;
   
   // 创建指标数据
   const vitalsData: WebVitalsMetrics = {
@@ -108,36 +108,37 @@ const handleWebVitals = (
     timestamp: Date.now()
   };
 
-  // 根据选项将指标发送到控制台或API
-  if (reportTo === 'console' || reportTo === 'both' || debug) {
+  // 只记录到控制台，不再发送到API
+  if (debug || true) {
     console.log(`[Web Vitals] ${metric.name}: ${metric.value} (${vitalsData.rating})`);
     if (debug) {
       console.log(metricWithContext);
     }
   }
   
-  if (reportTo === 'api' || reportTo === 'both') {
-    try {
-      // 将指标发送到API
-      const body = JSON.stringify(metricWithContext);
-      
-      // 使用beacon API在页面卸载时也能发送数据
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon('/api/vitals', body);
-      } else {
-        fetch('/api/vitals', {
-          body,
-          method: 'POST',
-          keepalive: true,
-          headers: { 'Content-Type': 'application/json' }
-        }).catch(err => {
-          console.error('[Web Vitals] 发送性能指标失败:', err);
-        });
-      }
-    } catch (e) {
-      console.error('[Web Vitals] 处理性能指标失败:', e);
-    }
-  }
+  // Vercel环境中文件系统是只读的，禁用API上报
+  // if (reportTo === 'api' || reportTo === 'both') {
+  //   try {
+  //     // 将指标发送到API
+  //     const body = JSON.stringify(metricWithContext);
+  //     
+  //     // 使用beacon API在页面卸载时也能发送数据
+  //     if (navigator.sendBeacon) {
+  //       navigator.sendBeacon('/api/vitals', body);
+  //     } else {
+  //       fetch('/api/vitals', {
+  //         body,
+  //         method: 'POST',
+  //         keepalive: true,
+  //         headers: { 'Content-Type': 'application/json' }
+  //       }).catch(err => {
+  //         console.error('[Web Vitals] 发送性能指标失败:', err);
+  //       });
+  //     }
+  //   } catch (e) {
+  //     console.error('[Web Vitals] 处理性能指标失败:', e);
+  //   }
+  // }
 };
 
 /**

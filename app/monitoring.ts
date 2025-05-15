@@ -11,19 +11,19 @@ export function initMonitoring() {
   if (typeof window === 'undefined') return;
   
   try {
-    // 初始化性能监控
+    // 初始化性能监控 - 仅在控制台报告，不写入文件
     initPerformanceMonitoring({
-      reportTo: isProduction() ? 'api' : 'both',
+      reportTo: 'console',  // 由于Vercel文件系统限制，只能记录到控制台
       debug: !isProduction()
     });
     
-    // 初始化用户行为分析
+    // 初始化用户行为分析 - 不使用文件存储
     initAnalytics();
     
     // 设置自动点击跟踪
     setupClickTracking();
     
-    // 注册全局错误处理程序
+    // 注册全局错误处理程序，但禁用文件写入
     setupGlobalErrorHandlers();
     
     if (!isProduction()) {
@@ -43,8 +43,15 @@ function setupGlobalErrorHandlers() {
     const error = event.reason;
     console.error('[监控] 未处理的Promise拒绝:', error);
     
-    // 记录错误到API
-    logErrorToApi('unhandledrejection', error);
+    // 仅记录到控制台，不发送到API以避免文件系统错误
+    console.error('[错误日志]', {
+      type: 'unhandledrejection',
+      message: error.message || String(error),
+      stack: error.stack,
+      timestamp: Date.now(),
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    });
   });
   
   // 处理全局错误
@@ -53,8 +60,14 @@ function setupGlobalErrorHandlers() {
     if (event.error) {
       console.error('[监控] 全局错误:', event.error);
       
-      // 记录错误到API
-      logErrorToApi('global', event.error, {
+      // 仅记录到控制台，不发送到API以避免文件系统错误
+      console.error('[错误日志]', {
+        type: 'global',
+        message: event.error.message || String(event.error),
+        stack: event.error.stack,
+        timestamp: Date.now(),
+        userAgent: navigator.userAgent,
+        url: window.location.href,
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno
@@ -64,10 +77,25 @@ function setupGlobalErrorHandlers() {
 }
 
 /**
- * 将错误记录到API
+ * 将错误记录到API (已禁用文件写入)
  */
 function logErrorToApi(errorType: string, error: any, extra?: Record<string, any>) {
   try {
+    // 在Vercel部署中禁用API日志记录，避免文件系统错误
+    if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+      console.error('[错误日志]', {
+        type: errorType,
+        message: error.message || String(error),
+        stack: error.stack,
+        timestamp: Date.now(),
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        extra
+      });
+      return;
+    }
+    
+    // 在开发环境或自托管环境中，可以继续使用API日志
     fetch('/api/logs/error', {
       method: 'POST',
       headers: {
@@ -102,7 +130,7 @@ export const monitorAppLoad = (appName: string) => {
     window.addEventListener('load', () => {
       setTimeout(() => {
         const duration = measurePerformance(`${appName}_load`, {
-          reportTo: 'both'
+          reportTo: 'console'  // 只记录到控制台
         });
         
         if (!isProduction()) {

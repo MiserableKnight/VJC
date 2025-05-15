@@ -30,34 +30,62 @@ const server = new ApolloServer({
 // 为Next.js App Router创建处理程序
 const handler = startServerAndCreateNextHandler(server, {
   // 可选：添加上下文
-  // context: async (req, res) => ({
-  //   req,
-  //   res,
-  //   // 可以在这里添加其他上下文对象
-  // }),
+  context: async (req) => ({
+    req,
+    // 可以在这里添加其他上下文对象
+  }),
 });
+
+// 处理OPTIONS请求以支持CORS预检
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Apollo-Require-Preflight',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
+}
 
 // 处理GET和POST请求
 export async function GET(request: NextRequest) {
   try {
+    // 由于GraphQL主要使用POST，GET请求可能是健康检查或内省查询
     return await handler(request);
   } catch (error) {
     console.error('GraphQL GET请求处理错误:', error);
     return NextResponse.json(
       { errors: [{ message: '处理请求出错' }] },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Content-Type': 'application/json'
+        }
+      }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // 处理GraphQL POST请求
     return await handler(request);
   } catch (error) {
     console.error('GraphQL POST请求处理错误:', error);
     return NextResponse.json(
       { errors: [{ message: '处理请求出错' }] },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Content-Type': 'application/json'
+        }
+      }
     );
   }
 }
