@@ -53,24 +53,6 @@ export class ChartDataItem {
   failure_rate_per_1000_hours?: number;
 }
 
-@ObjectType({ description: "飞机故障统计" })
-export class AircraftFailureStats {
-  @Field(() => ID)
-  registration!: string;
-
-  @Field(() => ID)
-  msn!: string;
-
-  @Field(() => Float, { description: "故障千时率" })
-  failure_rate_per_1000_hours!: number;
-
-  @Field(() => Int, { description: "故障总数" })
-  total_failures!: number;
-
-  @Field(() => Float, { description: "累计飞行小时" })
-  cumulative_air_time!: number;
-}
-
 @ObjectType({ description: "API响应数据" })
 export class ChartDataResponse {
   @Field(() => [ChartDataItem], { description: "合并后的图表数据" })
@@ -268,68 +250,6 @@ export class ChartDataResolver {
       console.error('获取机队数据失败:', error);
       throw new Error('Failed to fetch aircraft data');
     }
-  }
-
-  @Query(() => [AircraftFailureStats], { description: "获取单架机故障统计" })
-  async getAircraftFailureStats(): Promise<AircraftFailureStats[]> {
-    console.log('GraphQL: 开始查询单架机故障统计');
-    
-    // 获取技术状态数据和机队数据
-    const techStatusData = await db.getTechStatusData();
-    const fleetData = await db.getFleetData();
-    
-    // 获取累计飞行小时数据
-    const dailyResult = { rows: await db.getDailyData('<=', new Date().toISOString().split('T')[0].replace(/-/g, '/')) };
-    const cumulativeResult = { rows: await db.getCumulativeData('<=', new Date().toISOString().split('T')[0].replace(/-/g, '/')) };
-    
-    // 计算每架飞机的故障次数
-    const aircraftFailures: Record<string, number> = {};
-    
-    // 统计每架飞机的故障次数（只统计故障级别大于1的故障）
-    techStatusData.forEach(status => {
-      if (status.故障级别 && status.故障级别 > 1) {
-        const reg = status.注册号;
-        if (!aircraftFailures[reg]) {
-          aircraftFailures[reg] = 0;
-        }
-        aircraftFailures[reg]++;
-      }
-    });
-    
-    // 计算每架飞机的飞行小时
-    const aircraftAirTime: Record<string, number> = {};
-    
-    // 假设有单架机的累计飞行小时数据，这里需要根据实际数据结构进行调整
-    // 这里使用整个机队的数据作为示例
-    const latestData = cumulativeResult.rows[cumulativeResult.rows.length - 1];
-    const fleetAirTime = latestData?.cumulative_air_time || 0;
-    
-    // 计算每架飞机的故障千时率
-    const result: AircraftFailureStats[] = [];
-    
-    fleetData.forEach(aircraft => {
-      const reg = aircraft.registration;
-      const failures = aircraftFailures[reg] || 0;
-      // 这里假设每架飞机有相同的飞行小时，实际中应根据单架机数据计算
-      const airTime = fleetAirTime / fleetData.length; // 简化处理，平均分配飞行小时
-      
-      let failureRate = 0;
-      if (airTime > 0) {
-        failureRate = parseFloat(((1000 * failures) / airTime).toFixed(2));
-      }
-      
-      result.push({
-        registration: reg,
-        msn: aircraft.msn,
-        failure_rate_per_1000_hours: failureRate,
-        total_failures: failures,
-        cumulative_air_time: airTime
-      });
-    });
-    
-    console.log(`GraphQL: 单架机故障统计完成, 共 ${result.length} 架飞机`);
-    
-    return result;
   }
 }
 

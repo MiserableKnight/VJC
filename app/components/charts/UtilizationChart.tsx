@@ -23,7 +23,7 @@ const UtilizationChartComponent: FC<UtilizationChartProps> = ({ data, onRefresh 
   // 使用useMemo缓存图表配置
   const chartOptions = useMemo(() => ({
     title: {
-      text: '日利用率（飞行小时和轮挡小时）',
+      text: '日利用率',
       left: 'center',
       textStyle: { fontSize: value({ xs: 14, md: 18, base: 18 }) }
     },

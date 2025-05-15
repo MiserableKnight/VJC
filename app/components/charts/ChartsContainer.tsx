@@ -136,16 +136,6 @@ const ChartsContainerComponent: FC = () => {
    */
   return (
     <div className="space-y-8 sm:space-y-16 max-w-7xl mx-auto">
-      <ErrorBoundary fallback={<ErrorFallback title="空时数据图表" retryHandler={handleRetry} />}>
-        <LazyChart 
-          height="h-[450px] sm:h-[450px] md:h-[550px]"
-          rootMargin="200px 0px"
-          id="air-time-chart"
-        >
-          <AirTimeChart data={chartData} onRefresh={handleRetry} />
-        </LazyChart>
-      </ErrorBoundary>
-      
       <ErrorBoundary fallback={<ErrorFallback title="日利用率图表" retryHandler={handleRetry} />}>
         <LazyChart 
           height="h-[450px] sm:h-[450px] md:h-[550px]"
@@ -156,16 +146,6 @@ const ChartsContainerComponent: FC = () => {
         </LazyChart>
       </ErrorBoundary>
       
-      <ErrorBoundary fallback={<ErrorFallback title="飞行循环图表" retryHandler={handleRetry} />}>
-        <LazyChart 
-          height="h-[450px] sm:h-[450px] md:h-[550px]"
-          rootMargin="200px 0px"
-          id="flight-cycle-chart"
-        >
-          <FlightCycleChart data={chartData} onRefresh={handleRetry} />
-        </LazyChart>
-      </ErrorBoundary>
-      
       <ErrorBoundary fallback={<ErrorFallback title="故障千时率图表" retryHandler={handleRetry} />}>
         <LazyChart 
           height="h-[500px] sm:h-[500px] md:h-[600px]"
@@ -173,6 +153,26 @@ const ChartsContainerComponent: FC = () => {
           id="failure-rate-chart"
         >
           <FailureRateChart data={chartData} onRefresh={handleRetry} />
+        </LazyChart>
+      </ErrorBoundary>
+      
+      <ErrorBoundary fallback={<ErrorFallback title="空时数据图表" retryHandler={handleRetry} />}>
+        <LazyChart 
+          height="h-[450px] sm:h-[450px] md:h-[550px]"
+          rootMargin="200px 0px"
+          id="air-time-chart"
+        >
+          <AirTimeChart data={chartData} onRefresh={handleRetry} />
+        </LazyChart>
+      </ErrorBoundary>
+      
+      <ErrorBoundary fallback={<ErrorFallback title="飞行循环图表" retryHandler={handleRetry} />}>
+        <LazyChart 
+          height="h-[450px] sm:h-[450px] md:h-[550px]"
+          rootMargin="200px 0px"
+          id="flight-cycle-chart"
+        >
+          <FlightCycleChart data={chartData} onRefresh={handleRetry} />
         </LazyChart>
       </ErrorBoundary>
       

@@ -6,32 +6,10 @@ import { ChartDataItemGQL } from '../../context/ChartDataContext';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { useResponsive } from '../../hooks/useResponsive';
 import { getChartColors } from '../../utils/chartUtils';
-import { gql, useQuery } from '@apollo/client';
-
-// 添加查询获取单架机故障千时率数据
-const GET_AIRCRAFT_FAILURE_STATS = gql`
-  query GetAircraftFailureStats {
-    getAircraftFailureStats {
-      registration
-      msn
-      failure_rate_per_1000_hours
-      total_failures
-      cumulative_air_time
-    }
-  }
-`;
 
 interface FailureRateChartProps {
   data: ChartDataItemGQL[]; 
   onRefresh?: () => void;
-}
-
-interface AircraftFailureStats {
-  registration: string;
-  msn: string;
-  failure_rate_per_1000_hours: number;
-  total_failures: number;
-  cumulative_air_time: number;
 }
 
 /**
@@ -41,37 +19,6 @@ interface AircraftFailureStats {
 const FailureRateChartComponent: FC<FailureRateChartProps> = ({ data, onRefresh }) => {
   const { value } = useResponsive();
   const chartColors = getChartColors();
-  
-  // 查询单架机故障统计数据
-  const { loading: statsLoading, error: statsError, data: statsData } = useQuery(GET_AIRCRAFT_FAILURE_STATS);
-  
-  // 获取单架机故障千时率数据
-  const aircraftFailureStats: AircraftFailureStats[] = statsData?.getAircraftFailureStats || [];
-  
-  // 整理单架机数据
-  const aircraftSeries = useMemo(() => {
-    if (!aircraftFailureStats.length) return [];
-    
-    // 将单架机数据按照千时率从高到低排序，选择前5个飞机（可根据需要调整）
-    const topAircraft = [...aircraftFailureStats]
-      .sort((a, b) => b.failure_rate_per_1000_hours - a.failure_rate_per_1000_hours)
-      .slice(0, 5);
-    
-    return topAircraft.map((aircraft, index) => ({
-      name: aircraft.registration,
-      type: 'line',
-      data: data.map(() => aircraft.failure_rate_per_1000_hours), // 为每个日期点重复同一个值
-      symbol: 'circle',
-      symbolSize: 4,
-      lineStyle: { 
-        width: 2,
-        type: 'dashed',
-      },
-      itemStyle: { 
-        color: chartColors[(index + 4) % chartColors.length] 
-      },
-    }));
-  }, [aircraftFailureStats, data, chartColors]);
   
   // 使用useMemo缓存图表配置，避免不必要的重新计算
   const chartOptions = useMemo(() => ({
@@ -92,7 +39,7 @@ const FailureRateChartComponent: FC<FailureRateChartProps> = ({ data, onRefresh 
       }
     },
     legend: {
-      data: ['机队故障千时率', ...aircraftSeries.map(s => s.name)],
+      data: ['机队故障千时率'],
       top: 'bottom',
       textStyle: {
         fontSize: value({ xs: 10, md: 12, base: 12 }),
@@ -158,28 +105,10 @@ const FailureRateChartComponent: FC<FailureRateChartProps> = ({ data, onRefresh 
             { type: 'max', name: '最高值' },
             { type: 'min', name: '最低值' }
           ]
-        },
-        markLine: {
-          data: [
-            { type: 'average', name: '平均值' }
-          ]
         }
-      },
-      ...aircraftSeries
+      }
     ]
-  }), [data, value, chartColors, aircraftSeries]);
-
-  // 处理加载状态
-  if (statsLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] mb-4"></div>
-          <p className="text-xl">加载中...</p>
-        </div>
-      </div>
-    );
-  }
+  }), [data, value, chartColors]);
 
   return (
     <ErrorBoundary fallback={<div>故障千时率图表渲染失败</div>}>
