@@ -333,11 +333,11 @@ export class ChartDataResolver {
   }
 }
 
-// 构建Schema
+// 修改 schema 导出方式，完全内存中构建，不保存到文件
 export const schema = buildSchemaSync({
   resolvers: [ChartDataResolver, AircraftResolver, AircraftFailureResolver],
-  emitSchemaFile: {
-    path: './schema.graphql',
-  },
-  validate: false, // 可根据需要开启
+  // 不要输出到文件系统
+  emitSchemaFile: false,
+  // 自动验证输入数据
+  validate: true,
 }); 
