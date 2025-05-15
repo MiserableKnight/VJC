@@ -356,20 +356,7 @@ export async function getTechStatusData(): Promise<TechStatusData[]> {
     
     const { data, error } = await supabaseClient
       .from(tableName)
-      .select(`
-        日期,
-        注册号,
-        MSN,
-        ATA,
-        故障描述,
-        处置措施,
-        是否AOG,
-        是否SDR,
-        对运行的影响,
-        是否396,
-        备注,
-        故障级别
-      `)
+      .select('*')
       .order('日期', { ascending: false });
     
     if (error) {
@@ -378,7 +365,11 @@ export async function getTechStatusData(): Promise<TechStatusData[]> {
     }
     
     console.log(`Supabase技术状态数据查询返回记录数: ${data?.length || 0}`);
-    return data || [];
+    
+    // 将查询结果转换为 TechStatusData 类型
+    const typedData: TechStatusData[] = (data || []) as TechStatusData[];
+    
+    return typedData;
   } catch (error) {
     console.error('使用Supabase获取技术状态数据失败:', error);
     return [];

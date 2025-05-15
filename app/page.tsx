@@ -5,6 +5,9 @@ import { ApolloProvider } from '@apollo/client';
 import client from './lib/apolloClient';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+// 防止在构建时预渲染
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const modules = [
     { name: '飞机运行状态', path: '/aircraft-operational-status', icon: '✈️' },

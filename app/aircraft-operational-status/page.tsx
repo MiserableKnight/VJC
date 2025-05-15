@@ -5,6 +5,9 @@ import { AircraftLegDataTable } from '../components/aircraft/AircraftLegDataTabl
 import { FlightRadarService } from '../services/flightRadarService';
 import Link from 'next/link';
 
+// 防止在构建时预渲染
+export const dynamic = 'force-dynamic';
+
 // 飞机注册号
 const AIRCRAFT_INFO = {
   B652G: {

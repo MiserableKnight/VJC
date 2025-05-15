@@ -6,13 +6,19 @@ const nextConfig = {
     // 数据库凭据不应该暴露给前端
     APP_ENV: process.env.NODE_ENV || 'development'
   },
+  // 输出独立部署模式
+  output: "standalone",
+  // 全局动态参数
+  dynamicParams: true,
   // 移除不支持的配置项
   // optimizeFonts: false, - 已移除
   // telemetry: { 
   //   disabled: true 
   // }, - 已移除
   experimental: {
-    webVitalsAttribution: []
+    webVitalsAttribution: [],
+    appDir: true,
+    serverComponentsExternalPackages: []
   },
   // 添加安全性配置
   async headers() {
