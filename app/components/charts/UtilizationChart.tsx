@@ -35,7 +35,13 @@ const UtilizationChartComponent: FC<UtilizationChartProps> = ({ data, onRefresh 
     legend: {
       data: ['飞行小时利用率', '轮挡小时利用率', '平均飞行小时利用率', '平均轮挡小时利用率'],
       top: 'bottom',
-      textStyle: { fontSize: value({ xs: 10, md: 12, base: 12 }) }
+      textStyle: { fontSize: value({ xs: 10, md: 12, base: 12 }) },
+      selected: {
+        '飞行小时利用率': false,
+        '轮挡小时利用率': false,
+        '平均飞行小时利用率': true,
+        '平均轮挡小时利用率': true
+      }
     },
     grid: {
       left: value({ xs: '3%', md: '4%', base: '4%' }),

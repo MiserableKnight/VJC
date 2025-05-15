@@ -35,7 +35,13 @@ const FlightCycleChartComponent: FC<FlightCycleChartProps> = ({ data, onRefresh 
     legend: {
       data: ['飞行循环', '飞行航段', '累计飞行循环', '累计飞行航段'],
       top: 'bottom',
-      textStyle: { fontSize: value({ xs: 10, md: 12, base: 12 }) }
+      textStyle: { fontSize: value({ xs: 10, md: 12, base: 12 }) },
+      selected: {
+        '飞行循环': true,
+        '累计飞行循环': true,
+        '飞行航段': false,
+        '累计飞行航段': false
+      }
     },
     grid: {
       left: value({ xs: '3%', md: '4%', base: '4%' }),
