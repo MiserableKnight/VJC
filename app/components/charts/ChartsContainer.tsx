@@ -5,6 +5,7 @@ import { useChartData, ChartDataItemGQL } from '../../context/ChartDataContext';
 import { AirTimeChart } from './AirTimeChart';
 import { UtilizationChart } from './UtilizationChart';
 import { FlightCycleChart } from './FlightCycleChart';
+import { FailureRateChart } from './FailureRateChart';
 import { LazyChart } from './LazyChart';
 import { formatDate } from '../../utils/chartUtils';
 import { ErrorBoundary } from '../ErrorBoundary';
@@ -162,6 +163,16 @@ const ChartsContainerComponent: FC = () => {
           id="flight-cycle-chart"
         >
           <FlightCycleChart data={chartData} onRefresh={handleRetry} />
+        </LazyChart>
+      </ErrorBoundary>
+      
+      <ErrorBoundary fallback={<ErrorFallback title="故障千时率图表" retryHandler={handleRetry} />}>
+        <LazyChart 
+          height="h-[500px] sm:h-[500px] md:h-[600px]"
+          rootMargin="200px 0px"
+          id="failure-rate-chart"
+        >
+          <FailureRateChart data={chartData} onRefresh={handleRetry} />
         </LazyChart>
       </ErrorBoundary>
       

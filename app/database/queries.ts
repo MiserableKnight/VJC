@@ -1,6 +1,6 @@
 import { getSupabaseClient } from './connection';
-import { getOperationalDataTableName, getFleetDataTableName, getLegDataTableName, getEconomicDataTableName } from './config';
-import { FlightData, AircraftData, LegData, EconomicData } from './models';
+import { getOperationalDataTableName, getFleetDataTableName, getLegDataTableName, getEconomicDataTableName, getTechStatusDataTableName } from './config';
+import { FlightData, AircraftData, LegData, EconomicData, TechStatusData } from './models';
 import { 
   getChinaTime, 
   formatDateSlash, 
@@ -343,6 +343,48 @@ export async function getEconomicData(): Promise<EconomicData[]> {
   }
 }
 
+/**
+ * 获取飞机故障技术状态数据
+ * @returns 技术状态数据数组
+ */
+export async function getTechStatusData(): Promise<TechStatusData[]> {
+  console.log('使用Supabase客户端查询技术状态数据');
+  
+  try {
+    const tableName = getTechStatusDataTableName();
+    const supabaseClient = getSupabaseClient();
+    
+    const { data, error } = await supabaseClient
+      .from(tableName)
+      .select(`
+        日期,
+        注册号,
+        MSN,
+        ATA,
+        故障描述,
+        处置措施,
+        是否AOG,
+        是否SDR,
+        对运行的影响,
+        是否396,
+        备注,
+        故障级别
+      `)
+      .order('日期', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase技术状态数据查询失败:', error);
+      return [];
+    }
+    
+    console.log(`Supabase技术状态数据查询返回记录数: ${data?.length || 0}`);
+    return data || [];
+  } catch (error) {
+    console.error('使用Supabase获取技术状态数据失败:', error);
+    return [];
+  }
+}
+
 // 导出默认对象
 export default {
   getDailyData,
@@ -351,5 +393,6 @@ export default {
   getLatestDate,
   getFleetData,
   getLegData,
-  getEconomicData
+  getEconomicData,
+  getTechStatusData
 }; 

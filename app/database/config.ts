@@ -83,4 +83,12 @@ export function getLegDataTableName(): string {
  */
 export function getEconomicDataTableName(): string {
   return ENV.DB_ECONOMIC_DATA_TABLE;
+}
+
+/**
+ * 获取技术状态数据表名
+ * @returns 技术状态数据表名
+ */
+export function getTechStatusDataTableName(): string {
+  return ENV.DB_TECH_STATUS_TABLE || 'tech_status_data';
 } 

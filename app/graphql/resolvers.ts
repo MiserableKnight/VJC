@@ -1,6 +1,8 @@
 import { Arg, Ctx, Field, ID, ObjectType, Query, Resolver } from 'type-graphql';
 import { getTodayForDisplay } from '../utils/dateUtils';
 import { FlightRadarService } from '../services/flightRadarService';
+import db from '../database';
+import { TechStatusData } from '../database/models';
 
 // 定义飞机对象类型
 @ObjectType()
@@ -115,6 +117,79 @@ export class FlightHistory {
     this.actualDeparture = actualDeparture;
     this.scheduledArrival = scheduledArrival;
     this.status = status;
+  }
+}
+
+// 定义飞机故障对象类型
+@ObjectType()
+export class AircraftFailure {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  severity!: string;
+  
+  @Field()
+  date_reported!: string;
+  
+  @Field()
+  registration!: string;
+
+  @Field()
+  msn!: string;
+  
+  @Field()
+  ata!: string;
+  
+  @Field()
+  failure_description!: string;
+  
+  @Field()
+  resolution_measures!: string;
+  
+  @Field()
+  is_aog!: boolean;
+  
+  @Field()
+  is_sdr!: boolean;
+  
+  @Field()
+  operation_impact!: string;
+  
+  @Field()
+  is_396!: boolean;
+  
+  @Field({ nullable: true })
+  notes?: string;
+
+  constructor(
+    id: string,
+    severity: string,
+    date_reported: string,
+    registration: string,
+    msn: string,
+    ata: string,
+    failure_description: string,
+    resolution_measures: string,
+    is_aog: boolean,
+    is_sdr: boolean,
+    operation_impact: string,
+    is_396: boolean,
+    notes?: string
+  ) {
+    this.id = id;
+    this.severity = severity;
+    this.date_reported = date_reported;
+    this.registration = registration;
+    this.msn = msn;
+    this.ata = ata;
+    this.failure_description = failure_description;
+    this.resolution_measures = resolution_measures;
+    this.is_aog = is_aog;
+    this.is_sdr = is_sdr;
+    this.operation_impact = operation_impact;
+    this.is_396 = is_396;
+    this.notes = notes;
   }
 }
 
@@ -340,5 +415,48 @@ export class AircraftResolver {
       flight.scheduledArrival,
       flight.status
     ));
+  }
+}
+
+@Resolver()
+export class AircraftFailureResolver {
+  @Query(() => [AircraftFailure])
+  async getAllAircraftFailures(): Promise<AircraftFailure[]> {
+    try {
+      // 从数据库获取真实数据
+      const techStatusData = await db.getTechStatusData();
+      
+      // 转换为GraphQL类型
+      return techStatusData.map((data: TechStatusData, index) => {
+        // 处理为null或undefined的情况
+        const isAog = Boolean(data["是否AOG"]);
+        const isSdr = Boolean(data["是否SDR"]);
+        const is396 = Boolean(data["是否396"]);
+        
+        // 故障级别值：默认为1（轻微），如果是AOG则为2（严重）
+        const severity = data["故障级别"] ? data["故障级别"].toString() : (isAog ? "2" : "1");
+        
+        return new AircraftFailure(
+          // 如果有ID则使用，否则使用索引
+          data.id || `${index}`,
+          // 使用故障级别值
+          severity,
+          data["日期"] || "",
+          data["注册号"] || "",
+          data["MSN"] || "",
+          data["ATA"] || "",
+          data["故障描述"] || "",
+          data["处置措施"] || "",
+          isAog,
+          isSdr,
+          data["对运行的影响"] || "",
+          is396,
+          data["备注"] || ""
+        );
+      });
+    } catch (error) {
+      console.error("获取飞机故障数据失败:", error);
+      return [];
+    }
   }
 } 

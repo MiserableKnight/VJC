@@ -14,6 +14,98 @@ type Aircraft {
   type: String
 }
 
+"""飞机数据"""
+type AircraftData {
+  id: ID!
+  msn: String!
+  registration: String!
+}
+
+type AircraftFailure {
+  ata: String!
+  date_reported: String!
+  failure_description: String!
+  id: ID!
+  is_396: Boolean!
+  is_aog: Boolean!
+  is_sdr: Boolean!
+  msn: String!
+  notes: String
+  operation_impact: String!
+  registration: String!
+  resolution_measures: String!
+  severity: String!
+}
+
+"""飞机故障统计"""
+type AircraftFailureStats {
+  """累计飞行小时"""
+  cumulative_air_time: Float!
+
+  """故障千时率"""
+  failure_rate_per_1000_hours: Float!
+  msn: ID!
+  registration: ID!
+
+  """故障总数"""
+  total_failures: Int!
+}
+
+"""图表数据项"""
+type ChartDataItem {
+  """累计飞行时间"""
+  cumulative_air_time: Float
+
+  """累计轮挡时间"""
+  cumulative_block_time: Float
+
+  """累计每日利用率(飞行)"""
+  cumulative_daily_utilization_air_time: Float
+
+  """累计每日利用率(轮挡)"""
+  cumulative_daily_utilization_block_time: Float
+
+  """累计飞行循环"""
+  cumulative_fc: Int
+
+  """累计飞行航段"""
+  cumulative_flight_leg: Int
+
+  """每日飞行时间"""
+  daily_air_time: Float
+
+  """每日轮挡时间"""
+  daily_block_time: Float
+
+  """每日飞行循环"""
+  daily_fc: Int
+
+  """每日飞行航段"""
+  daily_flight_leg: Int
+
+  """每日利用率(飞行)"""
+  daily_utilization_air_time: Float
+
+  """每日利用率(轮挡)"""
+  daily_utilization_block_time: Float
+  date: ID!
+
+  """故障千时率"""
+  failure_rate_per_1000_hours: Float
+}
+
+"""API响应数据"""
+type ChartDataResponse {
+  """合并后的图表数据"""
+  combinedData: [ChartDataItem!]!
+
+  """是否为最新一天的数据"""
+  isLatestDay: Boolean!
+
+  """最新数据的日期"""
+  latestDate: String
+}
+
 type FlightHistory {
   actualDeparture: String!
   date: String!
@@ -30,7 +122,15 @@ type FlightHistory {
 }
 
 type Query {
+  """获取图表所需的所有数据"""
+  chartData: ChartDataResponse!
   getAircraftDetails(registration: String!): Aircraft
+
+  """获取单架机故障统计"""
+  getAircraftFailureStats: [AircraftFailureStats!]!
   getAircraftFlightHistory(registration: String!): [FlightHistory!]!
-  getAllAircraft: [Aircraft!]!
+
+  """获取机队所有飞机数据"""
+  getAllAircraft: [AircraftData!]!
+  getAllAircraftFailures: [AircraftFailure!]!
 }

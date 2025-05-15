@@ -20,6 +20,7 @@ export interface ChartDataItemGQL {
   cumulative_flight_leg?: number | null;
   cumulative_daily_utilization_air_time?: number | null;
   cumulative_daily_utilization_block_time?: number | null;
+  failure_rate_per_1000_hours?: number | null;
 }
 
 // 定义Context状态的类型
@@ -53,6 +54,7 @@ const GET_CHART_DATA = gql`
         cumulative_flight_leg
         cumulative_daily_utilization_air_time
         cumulative_daily_utilization_block_time
+        failure_rate_per_1000_hours
       }
       isLatestDay
       latestDate

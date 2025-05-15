@@ -84,4 +84,23 @@ export interface EconomicData {
   in_fuel_kg: number;              // IN油量(kg)
   ground_fuel_consumption?: number; // 空地油耗（计算值：OUT油量-IN油量）
   air_fuel_consumption?: number;    // 空中油耗（计算值：OFF油量-ON油量）
+}
+
+/**
+ * 飞机故障技术状态数据接口
+ */
+export interface TechStatusData {
+  id?: string;            // ID字段
+  日期: string;            // 日期
+  注册号: string;          // 注册号
+  MSN: string;             // MSN
+  ATA?: string;            // ATA章节号
+  故障描述: string;        // 故障描述
+  处置措施?: string;       // 处置措施
+  是否AOG: boolean;        // 是否AOG
+  是否SDR: boolean;        // 是否SDR
+  对运行的影响?: string;   // 对运行的影响
+  是否396: boolean;        // 是否396
+  备注?: string;           // 备注
+  故障级别?: number;       // 故障级别 - 1为轻微，2为严重
 } 
