@@ -51,6 +51,15 @@ export class ChartDataItem {
 
   @Field(() => Float, { nullable: true, description: "故障千时率" })
   failure_rate_per_1000_hours?: number;
+  
+  @Field(() => Float, { nullable: true, description: "签派可靠度" })
+  dispatch_reliability?: number;
+  
+  @Field(() => Float, { nullable: true, description: "SDR千时率" })
+  sdr_rate_per_1000_hours?: number;
+  
+  @Field(() => Float, { nullable: true, description: "可用率" })
+  availability_rate?: number;
 }
 
 @ObjectType({ description: "API响应数据" })
@@ -158,9 +167,10 @@ export class ChartDataResolver {
     const dailyResult = { rows: await db.getDailyData(dateCondition, formattedTodayForDb) };
     const cumulativeResult = { rows: await db.getCumulativeData(dateCondition, formattedTodayForDb) };
     
-    // 获取技术状态数据和机队数据，用于计算故障千时率
+    // 获取技术状态数据、机队数据和使用状态数据
     const techStatusData = await db.getTechStatusData();
     const fleetData = await db.getFleetData();
+    const usageStatusData = await db.getUsageStatusData();
     
     console.log('GraphQL: 数据库查询完成');
     // 打印最后一个数据点的日期，用于调试
@@ -209,6 +219,85 @@ export class ChartDataResolver {
         dataMap[date].failure_rate_per_1000_hours = parseFloat(((1000 * failureCount) / cumulativeAirTime).toFixed(2));
       } else {
         dataMap[date].failure_rate_per_1000_hours = 0;
+      }
+      
+      // 计算签派可靠度：100*（当日累计飞行循环FC-（tech_status_data"备注"中的描述是"延误"+"取消"）/当日累计飞行循环
+      const cumulativeFC = dataMap[date].cumulative_fc || 0;
+      if (cumulativeFC > 0) {
+        const delayedOrCancelledCount = techStatusData.filter(status => {
+          const statusDate = new Date(status.日期.replace(/\//g, '-'));
+          return statusDate <= dateObj && status.备注 && (status.备注.includes('延误') || status.备注.includes('取消'));
+        }).length;
+        
+        // 计算签派可靠度
+        const reliability = 100 * (cumulativeFC - delayedOrCancelledCount) / cumulativeFC;
+        dataMap[date].dispatch_reliability = parseFloat(reliability.toFixed(2));
+      } else {
+        dataMap[date].dispatch_reliability = 100; // 如果没有飞行循环，则设置为100%
+      }
+      
+      // 计算SDR千时率：1000×SDR次数/飞行小时（空中）
+      if (cumulativeAirTime > 0) {
+        // 计算截至该日期的SDR次数（统计是否SDR为"是"的记录）
+        const sdrCount = techStatusData.filter(status => {
+          const statusDate = new Date(status.日期.replace(/\//g, '-'));
+          return statusDate <= dateObj && status.是否SDR === true;
+        }).length;
+        
+        // 计算SDR千时率
+        dataMap[date].sdr_rate_per_1000_hours = parseFloat(((1000 * sdrCount) / cumulativeAirTime).toFixed(2));
+      } else {
+        dataMap[date].sdr_rate_per_1000_hours = 0; // 如果没有飞行小时，则设置为0
+      }
+      
+      // 计算可用率 = （可用架日×100）/在用架日
+      // 可用架日 = 统计当天所有MSN列中值为"执行航班"的列数量
+      // 在用架日 = fleet_data中的MSN列中总共有几个唯一的飞机序列号
+      
+      // 获取当天的日期字符串
+      const dateStr = date.replace(/\//g, '-');
+      
+      // 找到当天的使用状态记录
+      const todayUsageRecord = usageStatusData.find(status => 
+        status.日期.replace(/\//g, '-') === dateStr
+      );
+      
+      // 初始化可用架日
+      let availableAircraftDays = 0;
+      
+      // 如果有当天的记录，检查各个飞机的使用状态
+      if (todayUsageRecord) {
+        // 遍历所有属性，查找MSN对应的状态
+        for (const key in todayUsageRecord) {
+          // 跳过非MSN字段
+          if (['id', '日期', '注册号'].includes(key)) continue;
+          
+          // 检查使用状态是否为"执行航班"
+          if (todayUsageRecord[key] === '执行航班') {
+            availableAircraftDays++;
+          }
+        }
+      }
+      
+      // 计算在用架日（机队中唯一MSN的数量）
+      const uniqueMSNs = new Set();
+      fleetData.forEach(aircraft => {
+        // 尝试获取msn（小写或大写）
+        const msn = aircraft.msn || aircraft.MSN;
+        if (msn) {
+          uniqueMSNs.add(msn);
+        }
+      });
+      const totalAircraftCount = uniqueMSNs.size;
+      
+      console.log(`日期: ${date}, 唯一MSN数量: ${totalAircraftCount}, 可用架日: ${availableAircraftDays}`);
+      
+      if (totalAircraftCount > 0) {
+        // 计算可用率
+        const availabilityRate = (availableAircraftDays * 100) / totalAircraftCount;
+        dataMap[date].availability_rate = parseFloat(availabilityRate.toFixed(2));
+      } else {
+        dataMap[date].availability_rate = 0; // 如果没有飞机，则设置为0
       }
       
       // 可以在此处为每架飞机单独计算故障千时率

@@ -8,18 +8,13 @@ const nextConfig = {
   },
   // 输出独立部署模式
   output: "standalone",
-  // 全局动态参数
-  dynamicParams: true,
-  // 移除不支持的配置项
-  // optimizeFonts: false, - 已移除
-  // telemetry: { 
-  //   disabled: true 
-  // }, - 已移除
+  
+  // 已移除过时的dynamicParams配置
+  
   experimental: {
     webVitalsAttribution: [],
-    appDir: true,
-    serverComponentsExternalPackages: []
   },
+  
   // 添加安全性配置
   async headers() {
     return [

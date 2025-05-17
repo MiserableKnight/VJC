@@ -6,6 +6,9 @@ import { AirTimeChart } from './AirTimeChart';
 import { UtilizationChart } from './UtilizationChart';
 import { FlightCycleChart } from './FlightCycleChart';
 import { FailureRateChart } from './FailureRateChart';
+import { DispatchReliabilityChart } from './DispatchReliabilityChart';
+import { SDRRateChart } from './SDRRateChart';
+import { AvailabilityRateChart } from './AvailabilityRateChart';
 import { LazyChart } from './LazyChart';
 import { formatDate } from '../../utils/chartUtils';
 import { ErrorBoundary } from '../ErrorBoundary';
@@ -153,6 +156,36 @@ const ChartsContainerComponent: FC = () => {
           id="failure-rate-chart"
         >
           <FailureRateChart data={chartData} onRefresh={handleRetry} />
+        </LazyChart>
+      </ErrorBoundary>
+      
+      <ErrorBoundary fallback={<ErrorFallback title="SDR千时率图表" retryHandler={handleRetry} />}>
+        <LazyChart 
+          height="h-[500px] sm:h-[500px] md:h-[600px]"
+          rootMargin="200px 0px"
+          id="sdr-rate-chart"
+        >
+          <SDRRateChart data={chartData} onRefresh={handleRetry} />
+        </LazyChart>
+      </ErrorBoundary>
+      
+      <ErrorBoundary fallback={<ErrorFallback title="可用率图表" retryHandler={handleRetry} />}>
+        <LazyChart 
+          height="h-[500px] sm:h-[500px] md:h-[600px]"
+          rootMargin="200px 0px"
+          id="availability-rate-chart"
+        >
+          <AvailabilityRateChart data={chartData} onRefresh={handleRetry} />
+        </LazyChart>
+      </ErrorBoundary>
+      
+      <ErrorBoundary fallback={<ErrorFallback title="签派可靠度图表" retryHandler={handleRetry} />}>
+        <LazyChart 
+          height="h-[500px] sm:h-[500px] md:h-[600px]"
+          rootMargin="200px 0px"
+          id="dispatch-reliability-chart"
+        >
+          <DispatchReliabilityChart data={chartData} onRefresh={handleRetry} />
         </LazyChart>
       </ErrorBoundary>
       

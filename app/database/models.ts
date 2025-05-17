@@ -42,6 +42,7 @@ export interface AircraftData {
   id: string;
   registration: string;
   msn: string;
+  MSN?: string;
   type?: string;
   delivery_date?: string;
   status?: string;
@@ -103,4 +104,17 @@ export interface TechStatusData {
   是否396: boolean;        // 是否396
   备注?: string;           // 备注
   故障级别?: number;       // 故障级别 - 1为轻微，2为严重
+}
+
+/**
+ * 飞机使用状态数据接口
+ */
+export interface UsageStatusData {
+  id?: string;             // ID字段
+  日期: string;             // 日期
+  注册号: string;           // 注册号
+  MSN: string;              // MSN
+  '185'?: string;           // 185列状态
+  '196'?: string;           // 196列状态
+  [msnKey: string]: string | undefined;  // 支持动态MSN列
 } 

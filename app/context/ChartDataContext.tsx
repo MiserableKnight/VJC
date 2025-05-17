@@ -21,6 +21,9 @@ export interface ChartDataItemGQL {
   cumulative_daily_utilization_air_time?: number | null;
   cumulative_daily_utilization_block_time?: number | null;
   failure_rate_per_1000_hours?: number | null;
+  dispatch_reliability?: number | null;
+  sdr_rate_per_1000_hours?: number | null;
+  availability_rate?: number | null;
 }
 
 // 定义Context状态的类型
@@ -55,6 +58,9 @@ const GET_CHART_DATA = gql`
         cumulative_daily_utilization_air_time
         cumulative_daily_utilization_block_time
         failure_rate_per_1000_hours
+        dispatch_reliability
+        sdr_rate_per_1000_hours
+        availability_rate
       }
       isLatestDay
       latestDate

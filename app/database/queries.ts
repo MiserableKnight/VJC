@@ -1,6 +1,6 @@
 import { getSupabaseClient } from './connection';
-import { getOperationalDataTableName, getFleetDataTableName, getLegDataTableName, getEconomicDataTableName, getTechStatusDataTableName } from './config';
-import { FlightData, AircraftData, LegData, EconomicData, TechStatusData } from './models';
+import { getOperationalDataTableName, getFleetDataTableName, getLegDataTableName, getEconomicDataTableName, getTechStatusDataTableName, getUsageStatusTableName } from './config';
+import { FlightData, AircraftData, LegData, EconomicData, TechStatusData, UsageStatusData } from './models';
 import { 
   getChinaTime, 
   formatDateSlash, 
@@ -269,8 +269,7 @@ export async function getFleetData(): Promise<AircraftData[]> {
     
     const { data, error } = await supabaseClient
       .from(tableName)
-      .select('*')
-      .order('registration');
+      .select('*');  // 选择所有字段，包括MSN
     
     if (error) {
       console.error('Supabase获取机队数据失败:', error);
@@ -278,7 +277,16 @@ export async function getFleetData(): Promise<AircraftData[]> {
     }
     
     console.log(`Supabase查询返回机队记录数: ${data?.length || 0}`);
-    return data || [];
+    
+    // 转换为AircraftData类型，包含MSN和msn字段
+    const aircraftData: AircraftData[] = (data || []).map((item: any) => ({
+      id: item.MSN || item.msn || '',  // 使用MSN或msn作为ID
+      registration: item.registration || '',
+      msn: item.msn || item.MSN || '',  // 优先使用小写msn
+      MSN: item.MSN || item.msn || ''   // 优先使用大写MSN
+    }));
+    
+    return aircraftData;
   } catch (error) {
     console.error('使用Supabase获取机队数据失败:', error);
     return [];
@@ -376,6 +384,39 @@ export async function getTechStatusData(): Promise<TechStatusData[]> {
   }
 }
 
+/**
+ * 获取飞机使用状态数据
+ * @returns 使用状态数据数组
+ */
+export async function getUsageStatusData(): Promise<UsageStatusData[]> {
+  console.log('使用Supabase客户端查询使用状态数据');
+  
+  try {
+    const tableName = getUsageStatusTableName();
+    const supabaseClient = getSupabaseClient();
+    
+    const { data, error } = await supabaseClient
+      .from(tableName)
+      .select('*')
+      .order('日期', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase使用状态数据查询失败:', error);
+      return [];
+    }
+    
+    console.log(`Supabase使用状态数据查询返回记录数: ${data?.length || 0}`);
+    
+    // 将查询结果转换为 UsageStatusData 类型
+    const typedData: UsageStatusData[] = (data || []) as UsageStatusData[];
+    
+    return typedData;
+  } catch (error) {
+    console.error('使用Supabase获取使用状态数据失败:', error);
+    return [];
+  }
+}
+
 // 导出默认对象
 export default {
   getDailyData,
@@ -385,5 +426,6 @@ export default {
   getFleetData,
   getLegData,
   getEconomicData,
-  getTechStatusData
+  getTechStatusData,
+  getUsageStatusData
 }; 
